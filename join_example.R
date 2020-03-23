@@ -5,7 +5,7 @@
 
 library(readxl)
 
-sample_key <- read_excel("data/S5_final_data_4Mar2020.xlsx", 
+sample_key <- read_excel("GOMRI_R5x2860000002_data.xlsx", 
                                      sheet = "sample_key", na = "NA")
 
 
@@ -15,7 +15,7 @@ infl <- read_excel("data/S5_final_data_4Mar2020.xlsx",
 #joining data example----
 library(dplyr)
 
-df <- right_join(x = sample_key, y = infl)
+df <- right_join(x = sample_key, y = infl, by = 'sampleID_stem')
 
 
 #example plot
@@ -30,11 +30,11 @@ ggplot(data = df,
 
 #Example of how to join multiple data sheets----
 
-pmorph <- read_excel("data/S5_final_data_4Mar2020.xlsx", 
+pmorph <- read_excel("GOMRI_R5x2860000002_data.xlsx", 
                    sheet = "plant_morphology", na = "NA")
 
 df <- right_join(x = sample_key, y = infl) %>%
-  right_join(x = pmorph, y = .)
+  right_join(x = pmorph, y = ., by = 'sampleID_stem')
 
 #example plot
 
