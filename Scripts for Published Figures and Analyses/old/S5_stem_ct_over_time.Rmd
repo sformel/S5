@@ -1,0 +1,308 @@
+---
+title: "S5_stem_ct_over_time"
+author: "Stephen Formel"
+date: "3/21/2021"
+output: html_document
+---
+
+## load libraries + set color
+```{r}
+library(readxl)
+library(plyr)
+library(dplyr)
+library(brms)
+library(ggplot2)
+library(tidybayes)
+library(modelr)
+
+```
+
+#Aesthetics
+
+```{r}
+
+#color palette
+cPAL <- c("#F0E442", "#0072B2") #yellow and blue
+cPAL <- c("#D55E00", "#0072B2")
+
+```
+
+## import data
+```{r}
+morph <- read_excel("../../data/S5_final_data_4Mar2020.xlsx", 
+                 sheet = "plant_morphology", na = "NA")
+
+sample_key <- read_excel("../../data/S5_final_data_4Mar2020.xlsx", 
+                                     sheet = "sample_key", na = "NA")
+
+df <- right_join(x = sample_key, y = morph, by = 'sampleID_stem')
+
+#fix factors
+df <- df %>%
+  mutate_if(is.character, as.factor)
+
+df$plantID <- as.factor(df$plantID)
+
+df$sampling_period <- factor(df$sampling_period, levels = c("M16", "N16", "J17", "N17", "J18"))
+
+#Gussy up the factor levels
+df$oil_added <- revalue(df$oil_added, c("Y" = "Oil Added", "N" = "No Oil Added"))
+df$orig_soil <- revalue(df$orig_soil, c("Y" = "Prev-Oiled Inoculum", "N" = "Not Prev-Oiled Inoculum"))
+
+df$num_stems_live <- as.integer(df$num_stems_live)
+```
+
+## plot
+
+```{r}
+
+ggplot(df,
+       aes(x = unclass(sampling_period),
+           y = num_stems_live,
+           fill = orig_soil,
+           shape = oil_added)) +
+  geom_point(size = 2,
+             alpha = 0.5,
+             position = position_dodge(width = 0.4)) +
+  theme_classic() +
+  labs(y = "Number of Live Stems",
+       x = "Time",
+       fill = "Soil Inoculum",
+       color = "Soil Inoculum",
+       shape = "Oil Addition") +
+  theme(legend.position = "right") +
+  guides(fill = guide_legend(override.aes=list(shape=21)),
+         color = guide_legend(override.aes=list(shape=21)),
+         shape = guide_legend(override.aes=list(size = 4))) +
+  geom_smooth(aes(color = orig_soil),
+              formula = y ~ log(x), method = "glm",
+              size = 0.5,
+              se = FALSE) +
+  scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24)) +
+  scale_color_manual(values = cPAL) +
+  scale_x_continuous(breaks = c(1:5),
+                     labels = c("Start", "6 Months", "1 Year", "1.5 Years", "2 Years"))
+
+ggsave("S5_stem_ct_over_time.png", width = 7, height = 5)
+```
+## Poisson on final stem count
+
+Following this example: https://www.theanalysisfactor.com/generalized-linear-models-in-r-part-6-poisson-regression-count-variables/
+
+https://www.theanalysisfactor.com/glm-r-overdispersion-count-regression/
+
+Also read this about the scale parameter in quasi-poisson. 
+http://dept.stat.lsa.umich.edu/~kshedden/Courses/Stat504/posts/glm/
+
+```{r}
+
+hist(df$num_stems_live[df$sampling_period=="J18"])
+  
+m <- glm(num_stems_live ~ orig_soil*oil_added, 
+         data = df %>% 
+           filter(sampling_period=="J18"),
+         family = poisson)
+
+summary(m) 
+
+#Effect size
+library(Rmisc)
+summarySE(data = df %>% 
+           filter(sampling_period=="J18"), measurevar = "num_stems_live", groupvars = "oil_added")
+```
+
+Overdispersed because Residual deviance >> degrees of freedom
+
+### Quasipoisson
+
+See this for interpretation: https://stats.stackexchange.com/questions/470640/interpreting-interaction-among-2-categorical-iv-in-quasi-poisson-regression
+
+```{r}
+
+m <- glm(num_stems_live ~ orig_soil*oil_added, 
+         data = df %>% 
+           filter(sampling_period=="J18"),
+         family = quasipoisson(link = "log"))
+
+summary(m) 
+
+#F-test is most appropriate for quasipoisson according to the help for anova.glm
+anova(m, test = "F")
+
+```
+
+Interpreting p-values:
+
+https://stats.stackexchange.com/questions/67897/different-p-values-for-anova-and-summary-in-glm-nb
+
+"The summary.glm() for glm is the Wald test for that level of factor (compared to the base level), while the anova.glm() is the Chisquared-test (based on deviance) for the whole factor variable. "
+
+The outcome of our attempt to account for over-dispersion is that the residual deviance has not changed.
+
+The dispersion parameter, which was forced to be 1 in our last model, is allowed to be estimated here. In fact, it is estimated at 5.49.
+
+This parameter tells us how many times larger the variance is than the mean.
+
+
+Interpreting estimates:
+
+Stem Count for No oil added + not prev oiled soil (0,0) = exp(4.652) = 104.7 stems
+Stem Count for Oiled + not prev oiled soil (1,0) = exp(4.652*1) x exp(-0.246) = 81.94
+Stem Count for Oiled + prev oiled soil (1,1) = exp(4.652*1) x exp(-0.246) x exp(-0.0009) = 82
+Stem Count for No oil added + prev oiled soil (0,1) = exp(4.652*1) x exp(-0.0009) = 104.8
+
+## plot J18 stem ct
+
+```{r}
+
+df %>%
+  filter(sampling_period=="J18") %>% 
+  group_by(oil_added, orig_soil) %>% 
+  summarise_at("num_stems_live",
+               funs(mean,
+                     sd, 
+                     se=sd(.)/sqrt(n()))) %>% 
+  ggplot(aes(x = orig_soil,
+           y = mean,
+           fill = oil_added))  +
+  geom_point(size = 4,
+             alpha = 0.5,
+             shape = 21,
+             position = position_dodge(width = 0.3)) +
+  geom_errorbar(aes(min = mean - 2*se,
+                    max = mean + 2*se),
+                width = 0.2,
+                position = position_dodge(width = 0.3)) +
+  labs(y = "Mean Stem Count",
+       x = NULL,
+       fill = "Oil Addition", 
+       caption = "Error bars represent \U00B1 2 SE") +
+  scale_fill_manual(values = c("white", "black")) +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21)))
+  
+ggsave("S5_stem_ct_J18.png", width = 8, height = 5.5)
+
+```
+
+
+## Bayesian Regression
+
+brm equivalent to quasibinomial GLM (above) on J18
+
+```{r}
+
+m <- brm(num_stems_live ~ 1 + orig_soil*oil_added, 
+         data = df %>% 
+           filter(sampling_period=="J18"),
+         family = "negbinomial",
+         control = list(adapt_delta = 0.85, 
+                        max_treedepth = 10),
+         cores = 4)
+
+summary(m)
+
+pp_check(object = m, type = "dens_overlay", nsamples = 100)
+pp_check(m, type = "stat", stat = 'median', nsamples = 100)
+pp_check(m, type = "stat", stat = 'mean', nsamples = 100)
+pp_check(m ,type = 'intervals', nsamples = 100)
+
+conditional_effects(m)
+```
+
+Same result.  Oil has an effect, nothing else does.
+
+#### All sampling periods
+
+Within sampling period comparison
+```{r}
+
+#Inits = 0 solves sampling error
+#https://discourse.mc-stan.org/t/error-when-using-the-brm/15954
+
+m <- brm(num_stems_live ~ 1 + (1|plantID) + sampling_period*orig_soil*oil_added, 
+         data = df %>% 
+           filter(sampling_period!="M16"),
+         family = "negbinomial",
+         control = list(adapt_delta = 0.85, 
+                        max_treedepth = 10),
+         cores = 4)
+
+summary(m)
+
+pp_check(object = m, type = "dens_overlay", nsamples = 100)
+pp_check(m, type = "stat", stat = 'median', nsamples = 100)
+pp_check(m, type = "stat", stat = 'mean', nsamples = 100)
+pp_check(m ,type = 'intervals', nsamples = 100)
+
+conditional_effects(m)
+```
+
+Suggests that oil had an effect in J18, but nothing else. 
+
+
+#### Over complete time
+
+```{r}
+
+m <- brm(num_stems_live ~ 1 + (1|plantID) + log(unclass(sampling_period)) + orig_soil*oil_added, 
+         data = df,
+         family = "gamma",
+         control = list(adapt_delta = 0.85, 
+                        max_treedepth = 10),
+         cores = 4)
+
+summary(m)
+
+pp_check(object = m, type = "dens_overlay", nsamples = 100)
+pp_check(m, type = "stat", stat = 'median', nsamples = 100)
+pp_check(m, type = "stat", stat = 'mean', nsamples = 100)
+pp_check(m ,type = 'intervals', nsamples = 100)
+
+conditional_effects(m)
+```
+Not a great fit.  But suggests that there is no effect of any of the treatments over time.
+
+## plot with fitted lines
+
+```{r}
+
+df %>% 
+  group_by(oil_added, orig_soil, plantID, sampling_period) %>% 
+  data_grid(unclasssampling_period = seq_range(unclass(sampling_period), n = 5)) %>% 
+  add_fitted_draws(m) %>% 
+  ggplot(aes(x = unclass(sampling_period),
+             y = num_stems_live),
+         color = oil_added,
+         shape = orig_soil) +
+  stat_lineribbon(aes(y = .value), alpha = 0.5) +
+  geom_point(data = df) +
+  facet_grid(cols = vars(oil_added),
+             rows = vars(orig_soil))
+  
+```
+
+## plot with fitted lines
+
+```{r}
+
+df %>% 
+  filter(sampling_period %in% c("M16", "J17", "J18")) %>% 
+  droplevels() %>% 
+  group_by(oil_added, orig_soil, plantID, sampling_period) %>% 
+  data_grid(unclasssampling_period = seq_range(unclass(sampling_period), n = 3)) %>% 
+  add_fitted_draws(m) %>% 
+  ggplot(aes(x = unclass(sampling_period),
+             y = num_stems_live),
+         color = oil_added,
+         shape = orig_soil) +
+  stat_lineribbon(aes(y = .value), alpha = 0.5) +
+  geom_point(data = df  %>% 
+  filter(sampling_period %in% c("M16", "J17", "J18")) %>% 
+  droplevels()) +
+  facet_grid(cols = vars(oil_added),
+             rows = vars(orig_soil))
+  
+```

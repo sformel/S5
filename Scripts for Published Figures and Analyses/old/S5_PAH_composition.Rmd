@@ -1,0 +1,1488 @@
+---
+title: "S5_PAH_composition"
+author: "Stephen Formel"
+date: "3/27/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Description:
+
+Answer the question, did PAH composition change over time as a function of plant presence or soil treatment?
+
+## Load libraries
+
+```{r}
+
+library(readxl)
+library(tidyverse)
+library(compositions)
+library(ggplot2)
+library(cowplot)
+library(plyr)
+library(vegan)
+
+```
+
+## Aesthetics
+
+```{r}
+
+#color palette
+cPAL <- c("#F0E442", "#0072B2")
+
+```
+
+## Load in data and clean
+```{r}
+
+
+oil <- read_excel("../../data/S5_final_data_4Mar2020.xlsx", 
+                 sheet = "oil", na = "NA")
+
+sample_key <- read_excel("../../data/S5_final_data_4Mar2020.xlsx", 
+                                     sheet = "sample_key", na = "NA")
+
+df <- right_join(x = sample_key, y = oil, by = 'sampleID_stem')
+
+#fix factors
+df <- df %>%
+  mutate_if(is.character, as.factor)
+
+df$plantID <- as.factor(df$plantID)
+df$table <- as.factor(df$table)
+df$block <- as.factor(df$block)
+
+df$sampling_period <- factor(df$sampling_period, levels = c("N16", "J17", "N17", "J18"))
+
+#Gussy up the factor levels
+df$oil_added <- revalue(df$oil_added, c("Y" = "Oiled", "N" = "No Oil Added")) %>% 
+  as.factor()
+df$orig_soil <- revalue(df$orig_soil, c("Y" = "Prev-Oiled Inoculum", "N" = "Not Prev-Oiled Inoculum")) %>% 
+  as.factor()
+df$plant_trt <- revalue(df$plant_trt, c("Y" = "Plant", "N" = "No Plant")) %>% 
+  as.factor()
+
+```
+
+# Soil Only
+
+Below I look into roots.
+
+## Relative Abundance Look
+
+```{r}
+
+df.PAHcomp <- df %>% 
+  select(plantID,
+         plant_trt,
+         orig_soil,
+         oil_added,
+         sampling_period,
+         tissue,
+         table,
+         block,
+         total_methy_naph,
+         total_methy_dibenz,
+         total_methy_phen,
+         total_methy_chry,
+         total_relevant_PAHs) %>% 
+  filter(tissue=="Soil" & oil_added=="Oiled")
+         
+
+#This transforms each number into it's relative abundance in that sample
+comps <- acomp(df.PAHcomp[,c(7:10)])
+
+clr.df <- cbind(comps, df.PAHcomp)
+
+clr.df.gathered <- clr.df %>%
+  gather(key = "PAH", value = "Proportion", c(11:14))
+
+clr.df.gathered %>%
+  ggplot(aes(x = PAH,
+             y = Proportion,
+             color = PAH)) +
+  geom_boxplot() +
+  facet_grid(rows = vars(orig_soil),
+             cols = vars(plant_trt))
+```
+How it looks here is that no plant introduced much less noise into the oil than with a plant.
+
+But as I understand it, it's inappropriate to do the stats on this because it's closed.  Need to translate to CLR.
+
+## CLR Transformation
+```{r}
+
+clr.PAH <- clr(na.omit(df.PAHcomp[,c(9:12)])) %>% 
+  data.frame()
+
+pc <- princomp(x = clr.PAH)
+
+#pc$Loadings # The loadings as compositional vector
+#pc$loadings # The loadings in clr-space
+
+df.pca <- pc$scores
+
+cbind(na.omit(df.PAHcomp), df.pca) %>%
+  ggplot(aes(x = Comp.1,
+             y = Comp.2,
+             fill = orig_soil,
+             shape = plant_trt)) +
+  geom_point(size = 4,
+             stroke = 1,
+             alpha = 0.5,
+             color = "black") +
+  scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24)) +
+  labs(fill = "Inoculum",
+       shape = "Plant Presence") +
+  theme_bw() +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_wrap(~ sampling_period)
+
+ggsave("S5_PAH_composition_PCA.png", width = 10, height = 6)
+```
+
+
+## PERMANOVA
+
+```{r}
+clr.PAH <- clr(na.omit(df.PAHcomp[,c(9:12)])) %>% 
+  data.frame()
+
+clr.PAH <- as.data.frame(clr.PAH)
+
+df.clr <- cbind(df.PAHcomp[,1:8], clr.PAH)
+
+set.seed(1)
+adonis(formula = clr.PAH ~ plant_trt*orig_soil, 
+       data = df.clr, 
+       permutations = 9999, 
+       method = "euclidean",
+       strata = df.clr$sampling_period)
+
+adonis2(formula = clr.PAH ~ plant_trt*orig_soil, 
+       data = df.clr, 
+       permutations = 9999, 
+       method = "euclidean",
+       strata = df.clr$sampling_period,
+       by = "margin")
+
+```
+
+Inoculum had an effect.  Not a surprise given that PAHs came in with the inocula. Plant trt didn't have an effetc. Time didn't interact with either. In general the PCA makes it obvious that the PAH data got noisier over time regardless of treatment.  More evidence that this is difficult to measure.
+
+```{r}
+
+df.clr %>%
+  gather(key = "PAH", value = "clr_val", c(9:12)) %>%
+  ggplot(aes(x = PAH,
+         y = clr_val),
+         color = "black") +
+  geom_jitter(aes(fill = orig_soil,
+                  shape = plant_trt),
+              size = 4,
+              stroke = 1,
+              alpha = 0.5,
+              width = 0.2) +
+  scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24)) +
+  labs(x = NULL,
+       fill = "Inoculum",
+       shape = "Plant Presence") +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_wrap(~ sampling_period,
+             labeller = labeller(sampling_period = c("N16" = "6 Months", "J17" = "1 Year", "N17" = "1.5 Years", "J18" = "2 Years"))) +
+  scale_x_discrete(labels = c("Chrysenes", "Dibenzothiophenes", "Naphthalenes", "Phenanthrenes")) +
+  labs(y = "Centered Log-Ratio") +
+  theme(legend.position = "right", 
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed")
+
+
+
+ggsave("S5_PAH_composition_stripplot.png", width = 8, height = 6)
+```
+
+
+### Attempt to get CLR and total PAH on same plot
+
+```{r}
+
+df.clr$total_PAH <- df.PAHcomp[df.PAHcomp$oil_added=="Oiled",]$total_relevant_PAHs
+
+df.clr %>%
+  gather(key = "PAH", value = "clr_val", c(9:12)) %>%
+  ggplot(aes(x = clr_val,
+         y = total_PAH),
+         color = PAH) +
+  # geom_jitter(aes(fill = PAH,
+  #                 shape = plant_trt),
+  #             size = 4,
+  #             stroke = 1,
+  #             alpha = 0.5,
+  #             width = 0.2) +
+  scale_color_manual(values = c(cPAL, "red", "black")) +
+  #scale_shape_manual(values = c(21,24)) +
+  labs(y = "Total PAHs",
+       x = "Centered Log-Ratio",
+       fill = "PAH",
+       shape = "Plant Presence") +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(color=guide_legend(override.aes=list(size = 5,
+                                              shape=21))) +
+  facet_grid(cols = vars(sampling_period),
+             rows = vars(plant_trt),
+             labeller = labeller(sampling_period = c("N16" = "6 Months", "J17" = "1 Year", "N17" = "1.5 Years", "J18" = "2 Years"))) +
+  scale_y_log10() +
+  theme(legend.position = "bottom") +
+  geom_vline(xintercept = 0,
+             linetype = "dashed") +
+  geom_text(size = 2,
+            aes(color = PAH,
+                label = plantID))
+
+ggsave("S5_PAH_comp_and_total_PAH.png", width = 8, height = 6)
+
+```
+## Strip plot
+```{r}
+
+df.clr %>%
+  gather(key = "PAH", value = "clr_val", c(9:12)) %>%
+  ggplot(aes(x = clr_val,
+         y = total_PAH,
+         color = PAH,
+         shape = plant_trt)) +
+  # geom_point(size = 4,
+  #            stroke = 1,
+  #            alpha = 0.5,
+  #            color = "black") +
+  # #scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24,23)) +
+  scale_fill_manual(values = c("red", "gray", "black", "white"),
+                    labels = c("chrysenes", "dibenzothiophenes", "naphthalenes", "phenanthrenes")) +
+  labs(shape = "Plant Treatment",
+       fill = "PAH",
+       x = "Centered Log-Ratio",
+       y = "Total PAHs (ug/g)") +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(fill=guide_legend(override.aes=list(size = 5,
+                                              shape=21))) +
+  facet_grid(cols = vars(sampling_period),
+             rows = vars(orig_soil),
+             labeller = labeller(sampling_period = c("N16" = "6 Months", "J17" = "1 Year", "N17" = "1.5 Years", "J18" = "2 Years"))) +
+  scale_y_log10() +
+  theme(legend.position = "bottom") +
+  geom_vline(xintercept = 0,
+             linetype = "dashed") +
+  geom_text(size = 3,
+            aes(color = PAH,
+                label = plantID))
+
+
+ggsave("S5_PAH_composition_regular_samples_plantID.png", width = 7, height = 5)
+
+```
+
+## By plant ID
+
+```{r}
+
+df.clr %>%
+  gather(key = "PAH", value = "clr_val", c(9:12)) %>%
+  ggplot(aes(x = clr_val,
+         y = total_PAH,
+         fill = PAH,
+         shape = plant_trt)) +
+  geom_point(size = 4,
+             stroke = 1,
+             alpha = 0.5,
+             color = "black") +
+  #scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24,23)) +
+  scale_fill_manual(values = c("red", "gray", "black", "white"),
+                    labels = c("chrysenes", "dibenzothiophenes", "naphthalenes", "phenanthrenes")) +
+  labs(shape = "Plant Treatment",
+       fill = "PAH",
+       x = "Centered Log-Ratio",
+       y = "Total PAHs (ug/g)") +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(fill=guide_legend(override.aes=list(size = 5,
+                                              shape=21))) +
+  facet_grid(cols = vars(sampling_period),
+             rows = vars(orig_soil),
+             labeller = labeller(sampling_period = c("N16" = "6 Months", "J17" = "1 Year", "N17" = "1.5 Years", "J18" = "2 Years"))) +
+  scale_y_log10() +
+  theme(legend.position = "bottom") +
+  geom_vline(xintercept = 0,
+             linetype = "dashed")
+
+
+ggsave("S5_PAH_composition_regular_samples.png", width = 7, height = 5)
+
+```
+
+## GLM on total PAHs
+
+```{r}
+library(lme4)
+m <- lmer(scale(total_PAH) ~ orig_soil*plant_trt + (1|sampling_period), 
+         data = df.clr,
+         REML = F)
+
+summary(m) 
+
+confint(m)
+
+```
+
+# Roots only
+
+Above this is the soil analysis
+
+## Relative Abundance Look
+
+```{r}
+
+df.PAHcomp <- df %>% 
+  select(plantID,
+         plant_trt,
+         orig_soil,
+         oil_added,
+         sampling_period,
+         tissue,
+         table,
+         block,
+         total_methy_naph,
+         total_methy_dibenz,
+         total_methy_phen,
+         total_methy_chry,
+         total_relevant_PAHs) %>% 
+  filter(oil_added=="Oiled" & tissue=="Root")
+         
+
+#This transforms each number into it's relative abundance in that sample
+comps <- acomp(df.PAHcomp[,c(9:12)])
+
+clr.df <- cbind(comps, df.PAHcomp)
+
+clr.df.gathered <- clr.df %>%
+  gather(key = "PAH", value = "Proportion", c(13:16))
+
+clr.df.gathered %>%
+  ggplot(aes(x = PAH,
+             y = Proportion,
+             color = PAH)) +
+  geom_boxplot() +
+  facet_grid(rows = vars(orig_soil),
+             cols = vars(plant_trt))
+```
+How it looks here is that no plant introduced much less noise into the oil than with a plant.
+
+But as I understand it, it's inappropriate to do the stats on this because it's closed.  Need to translate to CLR.
+
+## CLR Transformation
+```{r}
+
+clr.PAH <- clr(na.omit(df.PAHcomp[,c(9:12)])) %>% 
+  data.frame()
+
+pc <- princomp(x = clr.PAH)
+
+#pc$Loadings # The loadings as compositional vector
+#pc$loadings # The loadings in clr-space
+
+df.pca <- pc$scores
+
+cbind(na.omit(df.PAHcomp), df.pca) %>%
+  ggplot(aes(x = Comp.1,
+             y = Comp.2,
+             fill = orig_soil)) +
+  geom_point(size = 4,
+             stroke = 1,
+             alpha = 0.5,
+             color = "black",
+             shape = 21) +
+  scale_fill_manual(values = cPAL) +
+  labs(fill = "Inoculum") +
+  theme_bw() +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_wrap(~ sampling_period)
+
+ggsave("S5_PAH_composition_PCA_roots.png", width = 10, height = 6)
+```
+Things are getting noisier.  I checked the points that are pairing up in J18, they don't appear to be the result of table or block.
+
+## PERMANOVA
+
+```{r}
+clr.PAH <- clr(na.omit(df.PAHcomp[,c(9:12)])) %>% 
+  data.frame()
+
+clr.PAH <- as.data.frame(clr.PAH)
+
+df.clr <- cbind(df.PAHcomp[-21,1:8], clr.PAH)
+
+set.seed(1)
+adonis(formula = clr.PAH ~ orig_soil, data = df.clr, permutations = 9999, method = "euclidean",
+       strata = df.clr$sampling_period)
+
+```
+
+Like soil, inoculum had an effect, which makes sense. Time didn't interact with inoculum. In general the PCA makes it obvious that the PAH data got noisier over time regardless of treatment.  More evidence that this is difficult to measure.
+
+```{r}
+
+df.clr %>%
+  gather(key = "PAH", value = "clr_val", c(9:12)) %>%
+  ggplot(aes(x = PAH,
+         y = clr_val),
+         color = "black") +
+  geom_jitter(aes(fill = orig_soil),
+              size = 4,
+              stroke = 1,
+              alpha = 0.5,
+              width = 0.2,
+              shape = 21) +
+  scale_fill_manual(values = cPAL) +
+  labs(fill = "Inoculum") +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_wrap(~ sampling_period) +
+  scale_x_discrete(labels = c("Chrysenes","Dibenzothiophenes", "Naphthalenes", "Phenanthrenes")) +
+  labs(y = "Centered Log-Ratio") +
+  theme(legend.position = "right", 
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed")
+
+
+ggsave("S5_PAH_composition_stripplot_roots.png", width = 10, height = 6)
+
+```
+
+No clear relationship between Chrysenes and the 3 ring PAHs.  Maybe Naphtalenes go up and Phenanthrenes go down.  Probably should have sampled more.
+
+#Get CLR and total PAH on same plot
+```{r}
+
+df.clr$total_PAH <- na.omit(df.PAHcomp$total_relevant_PAHs)
+
+df.clr %>%
+  gather(key = "PAH", value = "clr_val", c(9:12)) %>%
+  ggplot(aes(x = clr_val,
+         y = total_PAH),
+         color = PAH) +
+  # geom_jitter(aes(fill = PAH,
+  #                 shape = plant_trt),
+  #             size = 4,
+  #             stroke = 1,
+  #             alpha = 0.5,
+  #             width = 0.2) +
+  scale_color_manual(values = c(cPAL, "red", "black")) +
+  #scale_shape_manual(values = c(21,24)) +
+  labs(y = "Total PAHs",
+       x = "Centered Log-Ratio",
+       fill = "PAH",
+       shape = "Plant Presence") +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(color=guide_legend(override.aes=list(size = 5,
+                                              shape=21))) +
+  facet_grid(cols = vars(sampling_period),
+             rows = vars(plant_trt),
+             labeller = labeller(sampling_period = c("N16" = "6 Months", "J17" = "1 Year", "N17" = "1.5 Years", "J18" = "2 Years"))) +
+  scale_y_log10() +
+  theme(legend.position = "bottom") +
+  geom_vline(xintercept = 0,
+             linetype = "dashed") +
+  geom_text(size = 2,
+            aes(color = PAH,
+                label = plantID))
+
+ggsave("S5_PAH_comp_and_total_PAH.png", width = 8, height = 6)
+```
+
+# Roots vs soil?
+
+```{r}
+
+df.PAHcomp <- df %>% 
+  select(plantID,
+         plant_trt,
+         orig_soil,
+         oil_added,
+         sampling_period,
+         tissue,
+         table,
+         block,
+         total_methy_naph,
+         total_methy_dibenz,
+         total_methy_phen,
+         total_methy_chry) %>% 
+  filter(oil_added=="Oiled" & tissue %in% c("Root", "Soil"))
+         
+
+#This transforms each number into it's relative abundance in that sample
+comps <- acomp(df.PAHcomp[,c(9:12)])
+
+clr.df <- cbind(comps, df.PAHcomp)
+
+clr.df.gathered <- clr.df %>%
+  gather(key = "PAH", value = "Proportion", c(13:16))
+
+clr.df.gathered %>%
+  ggplot(aes(x = PAH,
+             y = Proportion,
+             color = tissue)) +
+  geom_boxplot() +
+  facet_grid(rows = vars(orig_soil),
+             cols = vars(plant_trt))
+```
+How it looks here is that no plant introduced much less noise into the oil than with a plant.
+
+But as I understand it, it's inappropriate to do the stats on this because it's closed.  Need to translate to CLR.
+
+## CLR Transformation
+```{r}
+
+clr.PAH <- clr(na.omit(df.PAHcomp[,c(9:12)])) %>% 
+  data.frame()
+
+pc <- princomp(x = clr.PAH)
+
+#pc$Loadings # The loadings as compositional vector
+#pc$loadings # The loadings in clr-space
+
+df.pca <- pc$scores
+
+cbind(na.omit(df.PAHcomp), df.pca) %>%
+  ggplot(aes(x = Comp.1,
+             y = Comp.2,
+             fill = orig_soil,
+             shape = interaction(plant_trt, tissue))) +
+  geom_point(size = 4,
+             stroke = 1,
+             alpha = 0.5,
+             color = "black") +
+  scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24,23)) +
+  labs(fill = "Inoculum") +
+  theme_bw() +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_wrap(~ sampling_period)
+
+ggsave("S5_PAH_composition_PCA_rootsVsoil.png", width = 10, height = 6)
+```
+Roots separate out nicely in N16.  More noisy but still somewhat clear by J18.
+
+## PERMANOVA
+
+```{r}
+clr.PAH <- clr(na.omit(df.PAHcomp[,c(9:12)])) %>% 
+  data.frame()
+
+clr.PAH <- as.data.frame(clr.PAH)
+
+#remove one NA and bind
+df.clr <- cbind(na.omit(df.PAHcomp[-66,1:8]), clr.PAH)
+
+set.seed(1)
+adonis(formula = clr.PAH ~ unclass(sampling_period)*orig_soil*tissue, data = df.clr, permutations = 9999, method = "euclidean")
+
+```
+
+Time had an effect.  Tissue did too.  Time and tissue interacted as did inoculum and tissue.
+
+
+## Strip plot
+```{r}
+df.clr %>%
+  gather(key = "PAH", value = "clr_val", c(9:12)) %>%
+  ggplot(aes(x = clr_val,
+         y = total_PAH,
+         fill = PAH,
+         shape = orig_soil)) +
+  geom_jitter(size = 4,
+             stroke = 1,
+             alpha = 0.5,
+             color = "black",
+             width = 0.2) +
+  #scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24,23)) +
+  scale_fill_manual(values = c("red", "gray", "black", "white"),
+                    labels = c("chrysenes", "dibenzothiophenes", "naphthalenes", "phenanthrenes")) +
+  labs(shape = "Soil Inoculum",
+       fill = "PAH",
+       x = "Centered Log-Ratio",
+       y = "Total PAHs (ug/g)") +
+  theme_bw()  +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(fill=guide_legend(override.aes=list(shape=21,
+                                             size = 5))) +
+  facet_grid(cols = vars(sampling_period),
+             labeller = labeller(sampling_period = c("N16" = "6 months", "J17" = "1 year", "N17" = "1.5 years", "J18" = "2 years"))) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed") +
+  scale_y_log10()
+
+
+ggsave("S5_CLRvtotalPAH_roots.png", width = 10, height = 6)
+
+```
+
+# Total PAHs through time - SOIL
+
+```{r}
+
+df.PAH <- df %>% 
+  select(plantID,
+         plant_trt,
+         orig_soil,
+         oil_added,
+         sampling_period,
+         tissue,
+         table,
+         block,
+         total_relevant_PAHs) %>% 
+  filter(tissue %in% c("Soil"))
+
+```
+
+## Plot first
+
+Does it look like oil is being removed from the env?
+
+```{r}
+
+ggplot(df.PAH,
+       aes(x = sampling_period,
+           y = total_relevant_PAHs,
+           color = oil_added)) +
+  geom_jitter(aes(fill = oil_added,
+                  shape = plant_trt),
+              size = 4,
+             stroke = 1,
+             alpha = 0.5,
+             color = "black",
+             width = 0.2) +
+  scale_fill_manual(values = c("lightgray", "black")) +
+  scale_shape_manual(values = c(21,24,23)) +
+  labs(y = "Total PAHs (ug/g)",
+       fill = "Inoculum") +
+  theme_bw()  +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_grid(cols = vars(plant_trt),
+             rows = vars(orig_soil)) +
+  theme_bw() +
+  ylim(0,750)
+
+ggsave("S5_total_PAH_stripplot.png", width = 8, height = 6)
+```
+Questionable.   How about an ANOVA on the difference between N16 and J18?
+
+```{r}
+
+df.delta <- df.PAH %>% 
+   filter(!(plantID %in% c("60") & sampling_period=="J18"),
+          oil_added=="Oiled") %>% 
+   spread(key = sampling_period, value = total_relevant_PAHs) %>% 
+  mutate("deltaPAH" = J18 - N16)
+
+m <- lm(deltaPAH ~ plant_trt*orig_soil, data = df.delta)
+
+summary(m)
+hist(resid(m))
+shapiro.test(resid(m))
+
+kruskal.test(x = df.delta$deltaPAH, g = df.delta$plant_trt)
+
+```
+
+Couldn't get it to fit with transformations.  Kruskal-Wallis instead
+
+```{r}
+
+df.model <- df.PAH %>% 
+  filter(!(plantID %in% c("60") & sampling_period=="J18"),
+         oil_added=="Oiled",
+         sampling_period=="J18")
+
+kruskal.test(x = df.model$total_relevant_PAHs, g = df.model$plant_trt)
+kruskal.test(x = df.delta$deltaPAH, g = df.delta$orig_soil)
+kruskal.test(x = df.delta$deltaPAH, g = df.delta$oil_added)
+
+```
+Only the oil addition is significant.  Try the other two, just in the oil_added group.
+
+```{r}
+
+df.oiled <- df.delta %>% 
+  filter(oil_added == "Oiled")
+
+kruskal.test(x = df.oiled$deltaPAH, g = df.oiled$plant_trt)
+kruskal.test(x = df.oiled$deltaPAH, g = df.oiled$orig_soil)
+```
+Same within those groups.  I'm not going to pursue further.
+
+## Boxplot of Delta PAH
+
+```{r}
+
+ggplot(df.delta,
+       aes(x = orig_soil,
+           y = -deltaPAH,
+           shape = oil_added,
+           fill = orig_soil)) +
+  geom_jitter(alpha = 0.5,
+             color = "black",
+             width = 0.1,
+             size = 4) +
+  scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24)) +
+  labs(x = NULL,
+       y = "\u0394 Total PAHs (ug/g)",
+       shape = "Oil Addition",
+       fill = "Soil Inoculum") +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_grid(cols = vars(plant_trt)) +
+  scale_x_discrete(labels = c("Not Prev-Oiled\n Inoculum", "Prev-Oiled\n Inoculum"))
+
+ggsave("S5_delta_PAH_stripplot.png", width = 6, height = 4.5)
+```
+
+
+#Make Bayesian GLM
+
+```{r}
+
+library(brms)
+
+m <- brm(-deltaPAH ~ 1 + plant_trt*orig_soil,
+         data = df.delta %>% 
+           filter(oil_added=="No Oil Added"),
+         family = "skew_normal",
+         seed = 1, 
+         cores = 4,
+         control = list(adapt_delta = 0.99))
+
+summary(m)
+conditional_effects(m)
+
+pp_check(m, type = "dens_overlay", nsamples = 100)
+pp_check(m, type = "stat", stat = 'median', nsamples = 100)
+pp_check(m, type = "stat", stat = 'mean', nsamples = 100)
+pp_check(m ,type = 'intervals', nsamples = 100)
+
+```
+
+glmer models return singular fit if I include more than sampling_period.  If I use brm to get at the deltaPAH, it looks like one of the inocular might return a more steep decay than the other, but, not as an interaction with plant trt.  Also, it probably has more to do with the one outlier (tons of PAH).  But I can't get rid of that replicate and only have two smalpes in that one spot.  That's already the case for another treatment..  plant trt has nothing going on.  When I create the fill model in brm (the one that glmer warns is a singular fit), it tells me there isn't anything going on.  But it's not a very good fit, so I don't want to rely on it much.
+
+## Most convincing plot
+
+Since the burden is on me to show there isn't much difference here, I think I should make a dot plot with SE bars.  EVen though 3 samples doesn't really make a SE.
+
+```{r}
+
+library(Rmisc)
+
+delta.summary <- summarySE(df.delta, measurevar = "deltaPAH", groupvars = c("plant_trt", "orig_soil", "oil_added"))
+
+ggplot(delta.summary,
+       aes(x = orig_soil,
+           y = deltaPAH,
+           fill = oil_added)) +
+  # geom_point(inherit.aes = FALSE,  #Tried superimposing data points on means
+  #            data = df.delta,
+  #            aes(x = orig_soil,
+  #                y = deltaPAH,
+  #                fill = oil_added),
+  #            color = "black",
+  #            size = 2,
+  #            shape = 8,
+  #            position = position_dodge(width = 0.3)) +
+  geom_point(alpha = 0.5,
+             color = "black",
+             size = 4,
+             shape = 21,
+             position = position_dodge(width = 0.3)) +
+  geom_errorbar(aes(min = deltaPAH - 2*se,
+                    max = deltaPAH + 2*se),
+                width = 0.4,
+                position = position_dodge(width = 0.3)) +
+  scale_fill_manual(values = c("white", "black")) +
+  labs(x = NULL,
+       y = "\u0394 Total PAHs (ug/g)",
+       fill = "Oil Addition") +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_grid(cols = vars(plant_trt))
+
+ggsave("S5_delta_PAH_summary_plot.png", width = 8, height = 6)
+```
+
+# Total PAHs through time - ROOTS
+
+It really doesn't look like much oil got into the roots, although it's also possible that the results look the way they do because of how long it took to process them.
+
+```{r}
+
+df.PAH <- df %>% 
+  select(plantID,
+         plant_trt,
+         orig_soil,
+         oil_added,
+         sampling_period,
+         tissue,
+         table,
+         block,
+         total_relevant_PAHs) %>% 
+  filter(tissue %in% c("Root"))
+
+```
+
+## Plot first
+
+Does it look like oil is being removed from the env?
+
+```{r}
+
+ggplot(df.PAH,
+       aes(x = sampling_period,
+           y = total_relevant_PAHs)) +
+  geom_jitter(aes(fill = oil_added),
+              size = 4,
+             stroke = 1,
+             alpha = 0.5,
+             color = "black",
+             width = 0.1,
+             shape = 21) +
+  scale_fill_manual(values = c("white", "black")) +
+  labs(y = "Total PAHs (ug/g)",
+       fill = "Inoculum") +
+  theme_bw()  +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_grid(rows = vars(orig_soil)) +
+  theme_bw() +
+  ylim(0,150)
+
+ggsave("S5_total_PAH_stripplot_root.png", width = 8, height = 6)
+```
+Questionable.   Looks like the N16 (which were the only samples done in a timely manner) may have accumulated oil.  But it also may have just been oil on the outside.
+
+```{r}
+
+df.delta <- df.PAH %>% 
+  spread(key = sampling_period, value = total_relevant_PAHs) %>% 
+  mutate("deltaPAH" = J18 - N16)
+
+m <- lm(deltaPAH ~ oil_added*orig_soil, data = df.delta)
+
+summary(m)
+hist(resid(m))
+shapiro.test(resid(m))
+
+```
+
+Couldn't get it to fit with transformations.  Kruskal-Wallis instead
+
+```{r}
+
+kruskal.test(x = df.delta$deltaPAH, g = df.delta$orig_soil)
+kruskal.test(x = df.delta$deltaPAH, g = df.delta$oil_added)
+
+```
+Only the oil addition is significant.  Try the other two, just in the oil_added group.
+
+```{r}
+
+df.oiled <- df.delta %>% 
+  filter(oil_added == "Oiled")
+
+kruskal.test(x = df.oiled$deltaPAH, g = df.oiled$orig_soil)
+```
+Same within inoculum trt.  I'm not going to pursue further.
+
+## Boxplot of Delta PAH
+
+```{r}
+
+ggplot(df.delta,
+       aes(x = orig_soil,
+           y = -deltaPAH,
+           fill = oil_added)) +
+  geom_jitter(alpha = 0.5,
+             color = "black",
+             width = 0.1,
+             size = 4,
+             shape = 21) +
+  scale_fill_manual(values = c("white", "black")) +
+  labs(y = "\u0394 Total PAHs (ug/g)",
+       fill = "Oil Addition") +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_grid(cols = vars(plant_trt))
+
+ggsave("S5_delta_PAH_stripplot_roots.png", width = 8, height = 6)
+```
+
+
+#Make Bayesian GLM
+
+```{r}
+
+library(brms)
+
+m <- brm(-deltaPAH ~ 1 + orig_soil,
+         data = df.delta %>% 
+           filter(oil_added=="Oiled"),
+         family = "skew_normal",
+         seed = 1, 
+         cores = 4,
+         control = list(adapt_delta = 0.99))
+
+summary(m)
+conditional_effects(m)
+
+pp_check(m, type = "dens_overlay", nsamples = 100)
+pp_check(m, type = "stat", stat = 'median', nsamples = 100)
+pp_check(m, type = "stat", stat = 'mean', nsamples = 100)
+pp_check(m ,type = 'intervals', nsamples = 100)
+
+```
+
+When I create the model in brm, it tells me there isn't anything going on.  And it's not a very good fit, so I don't want to rely on it much.
+
+## Most convincing plot
+
+Since the burden is on me to show there isn't much difference here, I think I should make a dot plot with SE bars.  EVen though 3 samples doesn't really make a SE.
+
+```{r}
+
+library(Rmisc)
+
+delta.summary <- summarySE(df.delta, measurevar = "deltaPAH", groupvars = c("orig_soil", "oil_added"))
+
+ggplot(delta.summary,
+       aes(x = orig_soil,
+           y = deltaPAH,
+           fill = oil_added)) +
+  # geom_point(inherit.aes = FALSE,  #Tried superimposing data points on means
+  #            data = df.delta,
+  #            aes(x = orig_soil,
+  #                y = deltaPAH,
+  #                fill = oil_added),
+  #            color = "black",
+  #            size = 2,
+  #            shape = 8,
+  #            position = position_dodge(width = 0.3)) +
+  geom_point(alpha = 0.5,
+             color = "black",
+             size = 4,
+             shape = 21,
+             position = position_dodge(width = 0.3)) +
+  geom_errorbar(aes(min = deltaPAH - 2*se,
+                    max = deltaPAH + 2*se),
+                width = 0.4,
+                position = position_dodge(width = 0.3)) +
+  scale_fill_manual(values = c("white", "black")) +
+  labs(x = NULL,
+       y = "\u0394 Total PAHs (ug/g)",
+       fill = "Oil Addition") +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21)))
+
+ggsave("S5_delta_PAH_summary_plot_roots.png", width = 8, height = 6)
+```
+
+## Re-discovered that I had many more samples
+
+N16 we analyzed all of our samples before the disagreement in replicate number was discovered.J18, the Pardue lab made some mistakes and analyzed way more samples than they were supposed to, including some twice.
+
+```{r}
+oil.checkJ18 <- read_excel("../../data/oil_data/resampling_check.xlsx", 
+                 sheet = "J18", na = "NA")
+
+oil.checkJ18_2 <- read_excel("../../data/oil_data/resampling_check.xlsx", 
+                 sheet = "J18_2", na = "NA")
+
+oil.checkN16 <- read_excel("../../data/oil_data/resampling_check.xlsx", 
+                 sheet = "N16", na = "NA")
+
+OC.df <- rbind(oil.checkJ18, oil.checkJ18_2, oil.checkN16)
+
+df.X <- right_join(x = sample_key, y = OC.df, by = 'sampleID_stem')
+
+#fix factors
+df.X <- df.X %>%
+  mutate_if(is.character, as.factor) %>% 
+  select(-plantID.y)
+
+df.X$plantID <- as.factor(df.X$plantID.x)
+df.X <- df.X %>% 
+  select(-plantID.x)
+df.X$table <- as.factor(df.X$table)
+df.X$block <- as.factor(df.X$block)
+
+df.X$sampling_period <- factor(df.X$sampling_period, levels = c("N16", "J17", "N17", "J18"))
+
+#Gussy up the factor levels
+df.X$oil_added <- revalue(df.X$oil_added, c("Y" = "Oiled", "N" = "No Oil Added")) %>% 
+  as.factor()
+df.X$orig_soil <- revalue(df.X$orig_soil, c("Y" = "Prev-Oiled Inoculum", "N" = "Not Prev-Oiled Inoculum")) %>% 
+  as.factor()
+df.X$plant_trt <- revalue(df.X$plant_trt, c("Y" = "Plant", "N" = "No Plant")) %>% 
+  as.factor()
+
+#Select and summarize PAHs
+df.X <- df.X %>% 
+  mutate(tot_naph = `C1-naphthalenes`+`C2-naphthalenes`+`C3-naphthalenes`+`C4-naphthalenes`,
+         tot_phen = `C1-phenanthrenes`+`C2-phenanthrenes`+`C3-phenanthrenes`+`C4-phenanthrenes`,
+         tot_dibenz = `C1-dibenzothiophenes`+`C2-dibenzothiophenes`+`C3-dibenzothiophenes`,
+         tot_chrys = `C1-chrysenes`+`C2-chrysenes`+`C3-chrysenes`,
+         tot_PAH = tot_naph + tot_phen + tot_dibenz + tot_chrys) %>% 
+  select(sampleID_stem, plantID, plant_trt, orig_soil, oil_added, sampling_period, tot_PAH, tot_naph, tot_phen, tot_dibenz, tot_chrys)
+
+#total_PAHs
+A <- df.X %>%
+  filter(plantID %in% df.X$plantID[df.X$sampling_period=="J18"])
+
+A <- A %>%
+  filter(plantID %in% A$plantID[A$sampling_period=="N16"])
+
+B <- A #%>% 
+   #mutate(total_PAH = rowSums(select_if(., is.numeric), na.rm = TRUE))
+
+#remove S5_60_J18, which had something funky happen in analysis per Vijai
+
+B %>%  
+  filter(oil_added == "Oiled",
+         sampleID_stem!="S5_60_J18") %>%
+  ggplot(aes(x = sampling_period,
+             y = tot_PAH,
+             color = plant_trt,
+             shape = orig_soil)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_grid(rows = vars(orig_soil),
+             cols = vars(plant_trt))
+
+```
+
+### Test change in PAH over time
+
+```{r}
+
+C <- B %>% 
+  filter(sampleID_stem!="S5_60_J18") %>% 
+  select(plantID, plant_trt, orig_soil, oil_added, sampling_period, tot_PAH) %>% 
+  group_by(plantID,sampling_period) %>% filter(duplicated(plantID) | n()==1)
+
+df.delta <- C %>% 
+  filter(oil_added=="Oiled") %>% 
+  spread(key = sampling_period, value = tot_PAH) %>% 
+  mutate("deltaPAH" = J18 - N16) %>% 
+  na.omit()
+
+m <- lm(deltaPAH ~ plant_trt*orig_soil, data = df.delta)
+
+summary(m)
+hist(resid(m))
+shapiro.test(resid(m))
+
+kruskal.test(x = df.delta$deltaPAH, g = df.delta$plant_trt)
+
+
+#What about just at J18?
+D <- C %>% 
+  filter(sampling_period=="J18") %>% 
+  filter(oil_added=="Oiled")
+
+kruskal.test(x = D$tot_PAH, g = D$plant_trt)
+
+
+m <- lm(log(tot_PAH) ~ sampling_period*plant_trt*orig_soil, data = C %>% 
+          filter(oil_added=="Oiled"))
+summary(m)
+hist(resid(m))
+shapiro.test(resid(m))
+
+car::Anova(m, type = "III")
+
+```
+
+### Plot
+
+```{r}
+
+ggplot(df.delta,
+       aes(x = orig_soil,
+           y = -deltaPAH,
+           fill = orig_soil)) +
+  geom_jitter(alpha = 0.5,
+             color = "black",
+             width = 0.1,
+             size = 4,
+             shape = 21) +
+  scale_fill_manual(values = c("white", "black")) +
+  labs(y = "\u0394 Total PAHs (ug/g)",
+       fill = "Oil Addition") +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_grid(cols = vars(plant_trt)) +
+  scale_y_log10()
+```
+
+```{r}
+
+# Just J18
+
+C %>% 
+  filter(sampling_period=="J18") %>% 
+  filter(oil_added=="Oiled") %>% 
+  ggplot(aes(x = orig_soil,
+           y = tot_PAH,
+           fill = orig_soil)) +
+  geom_jitter(alpha = 0.5,
+             color = "black",
+             width = 0.1,
+             size = 4,
+             shape = 21) +
+  scale_fill_manual(values = c("white", "black")) +
+  labs(y = "\u0394 Total PAHs (ug/g)",
+       fill = "Oil Addition") +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_grid(cols = vars(plant_trt))
+```
+
+```{r}
+#What about N16?
+
+C %>% 
+  filter(sampling_period=="N16") %>% 
+  filter(oil_added=="Oiled") %>% 
+  ggplot(aes(x = orig_soil,
+           y = tot_PAH,
+           fill = orig_soil)) +
+  geom_jitter(alpha = 0.5,
+             color = "black",
+             width = 0.1,
+             size = 4,
+             shape = 21) +
+  scale_fill_manual(values = c("white", "black")) +
+  labs(y = "\u0394 Total PAHs (ug/g)",
+       fill = "Oil Addition") +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_grid(cols = vars(plant_trt))
+
+```
+
+```{r}
+#Together
+
+C %>% 
+  filter(oil_added=="Oiled") %>% 
+  ggplot(aes(x = plant_trt,
+           y = tot_PAH,
+           fill = orig_soil)) +
+  geom_jitter(alpha = 0.5,
+             color = "black",
+             width = 0.1,
+             size = 4,
+             shape = 21) +
+  scale_fill_manual(values = cPAL) +
+  labs(x = NULL,
+       y = "Total PAHs (ug/g)",
+       fill = "Inoculum") +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_grid(cols = vars(sampling_period),
+             labeller = labeller(sampling_period = c("N16" = "6 months", "J18" = "2 years"))) +
+  scale_y_log10()
+
+ggsave("S5_total_PAH_extra_samples.png", width = 6, height = 5)
+```
+
+```{r}
+D <- C %>% 
+  filter(oil_added=="Oiled") %>% 
+  filter(sampling_period=="J18") 
+
+hist(D$tot_PAH)
+
+#probably a GLM with gamma dist is more appropriate
+
+m <- glm(tot_PAH ~ plant_trt*orig_soil*sampling_period,
+        data = C %>% 
+  filter(oil_added=="Oiled"),
+        family = Gamma(link = "inverse"))
+
+anova(m, test = "F")
+summary(m)
+hist(resid(m))
+shapiro.test(resid(m))
+
+
+
+kruskal.test(D$tot_PAH, D$plant_trt)
+kruskal.test(D$tot_PAH, D$orig_soil)
+
+#What about effect size?
+library(Rmisc)
+summarySE(D, measurevar = "tot_PAH", groupvars = c("plant_trt"))
+```
+
+### Composition of Extra data
+
+```{r}
+B.2 <- B %>% 
+  filter(oil_added=="Oiled",
+         sampleID_stem!="S5_60_J18")
+
+clr.PAH <- clr(na.omit(B.2[,c(8:11)])) %>% 
+  data.frame()
+
+clr.PAH <- as.data.frame(clr.PAH)
+
+#remove one NA and bind
+df.clr <- cbind(na.omit(B.2[,1:7]), clr.PAH)
+
+set.seed(1)
+m <- adonis(formula = clr.PAH ~ orig_soil*plant_trt, data = df.clr, permutations = 9999, method = "euclidean",
+            strata = df.clr$sampling_period)
+
+m
+```
+sampling_period, orig_soil, and interactoin of two are signficant.  plant_trt, not quite
+
+## Strip plot
+```{r}
+
+df.clr %>%
+  gather(key = "PAH", value = "clr_val", c(8:11)) %>%
+  ggplot(aes(x = clr_val,
+         y = tot_PAH,
+         fill = PAH)) +
+  geom_jitter(aes(#fill = orig_soil,
+                  shape = plant_trt), 
+              size = 4,
+             stroke = 1,
+             alpha = 0.5,
+             color = "black",
+             width = 0.2) +
+  #scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24,23)) +
+  scale_fill_manual(values = c("red", "gray", "black", "white"),
+                    labels = c("chrysenes", "dibenzothiophenes", "naphthalenes", "phenanthrenes")) +
+  labs(shape = "Plant Treatment",
+       fill = "PAH",
+       x = "Centered Log-Ratio",
+       y = "Total PAHs (ug/g)") +
+  theme_bw()  +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(fill=guide_legend(override.aes=list(shape=21,
+                                             size = 5))) +
+  facet_grid(cols = vars(sampling_period),
+             labeller = labeller(sampling_period = c("N16" = "6 months", "J18" = "2 years"))) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed") +
+  scale_y_log10()
+
+
+ggsave("S5_PAH_composition_extra_samples.png", width = 7, height = 5)
+
+```
+
+
+## Leaves
+
+## Relative Abundance Look
+
+##import extra data for leaves
+```{r}
+
+df.other <- read_xlsx(path = "../../data/oil_data/S5_oil_metadata.xlsx", 
+                      sheet = "compiled_clean_oil_data",
+                      na = "NA")
+
+sample_key <- read_excel("../../data/S5_final_data_4Mar2020.xlsx", 
+                                     sheet = "sample_key", na = "NA")
+
+df.leaves <- right_join(x = sample_key, y =df.other, by = 'sampleID_stem')
+
+#fix factors
+df.leaves <- df.leaves %>%
+  mutate_if(is.character, as.factor)
+
+df.leaves$plantID <- as.factor(df.leaves$plantID)
+df.leaves$table <- as.factor(df.leaves$table)
+df.leaves$block <- as.factor(df.leaves$block)
+
+df.leaves$sampling_period <- factor(df.leaves$sampling_period, levels = c("N16", "J17", "N17", "J18"))
+
+#Gussy up the factor levels
+df.leaves$oil_added <- revalue(df.leaves$oil_added, c("Y" = "Oiled", "N" = "No Oil Added")) %>% 
+  as.factor()
+df.leaves$orig_soil <- revalue(df.leaves$orig_soil, c("Y" = "Prev-Oiled Inoculum", "N" = "Not Prev-Oiled Inoculum")) %>% 
+  as.factor()
+df.leaves$plant_trt <- revalue(df.leaves$plant_trt, c("Y" = "Plant", "N" = "No Plant")) %>% 
+  as.factor()
+
+#Make column for tissue
+
+df.leaves$tissue <- ifelse(str_detect(df.leaves$SampleID, pattern = "_L"), "Leaf", "Other")
+```
+
+```{r}
+df.leaves.PAHcomp <- df.leaves %>% 
+  select(plantID,
+         plant_trt,
+         orig_soil,
+         oil_added,
+         sampling_period,
+         tissue,
+         table,
+         block,
+         total_methy_naph,
+         total_methy_dibenz,
+         total_methy_phen,
+         total_methy_chry,
+         total_relevant_PAHs) %>% 
+  filter(tissue=="Leaf")
+
+#This transforms each number into it's relative abundance in that sample
+comps <- acomp(df.leaves.PAHcomp[,c(9:12)])
+
+clr.df <- cbind(comps, df.leaves.PAHcomp)
+
+clr.df.gathered <- clr.df %>%
+  gather(key = "PAH", value = "Proportion", c(13:16))
+
+clr.df.gathered %>%
+  ggplot(aes(x = PAH,
+             y = Proportion,
+             color = oil_added)) +
+  geom_boxplot() +
+  facet_grid(rows = vars(orig_soil),
+             cols = vars(oil_added))
+```
+How it looks here is that no plant introduced much less noise into the oil than with a plant.
+
+But as I understand it, it's inappropriate to do the stats on this because it's closed.  Need to translate to CLR.
+
+## CLR Transformation
+```{r}
+
+clr.PAH <- clr(na.omit(df.leaves.PAHcomp[,c(9:12)])) %>% 
+  data.frame()
+
+pc <- princomp(x = clr.PAH)
+
+#pc$Loadings # The loadings as compositional vector
+#pc$loadings # The loadings in clr-space
+
+df.pca <- pc$scores
+
+cbind(na.omit(df.leaves.PAHcomp), df.pca) %>%
+  ggplot(aes(x = Comp.1,
+             y = Comp.2,
+             fill = orig_soil,
+             shape = oil_added)) +
+  geom_point(size = 4,
+             stroke = 1,
+             alpha = 0.5,
+             color = "black") +
+  scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24,23)) +
+  labs(fill = "Inoculum") +
+  theme_bw() +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_wrap(~ sampling_period)
+
+ggsave("S5_PAH_composition_PCA_leaves.png", width = 10, height = 6)
+```
+Roots separate out nicely in N16.  More noisy but still somewhat clear by J18.
+
+## PERMANOVA
+
+```{r}
+clr.PAH <- clr(na.omit(df.leaves.PAHcomp[,c(9:12)])) %>% 
+  data.frame()
+
+clr.PAH <- as.data.frame(clr.PAH)
+
+#remove one NA and bind
+df.clr <- cbind(na.omit(df.leaves.PAHcomp[,1:8]), clr.PAH)
+
+set.seed(1)
+adonis(formula = clr.PAH ~ orig_soil*oil_added, data = df.clr, permutations = 9999, method = "euclidean")
+
+```
+Orig soil is technically significant, but I don't buy it from the ordination.
+
+## Strip plot
+```{r}
+
+df.clr$total_PAH <- na.omit(df.leaves.PAHcomp$total_relevant_PAHs)
+
+df.clr %>%
+  gather(key = "PAH", value = "clr_val", c(9:12)) %>%
+  ggplot(aes(x = clr_val,
+         y = total_PAH,
+         fill = PAH,
+         shape = orig_soil)) +
+  geom_point(size = 4,
+             stroke = 1,
+             alpha = 0.5,
+             color = "black",
+             width = 0.2) +
+  scale_shape_manual(values = c(21,24,23)) +
+  scale_fill_manual(values = c("red", "gray", "black", "white"),
+                    labels = c("chrysenes", "dibenzothiophenes", "naphthalenes", "phenanthrenes")) +
+  labs(shape = "Soil Inoculum",
+       fill = "PAH",
+       x = "Centered Log-Ratio",
+       y = "Total PAHs (ug/g)") +
+  theme_bw()  +
+  theme(legend.position = "bottom", legend.box="vertical") +
+  guides(fill=guide_legend(override.aes=list(shape=21,
+                                             size = 5))) +
+  facet_grid(cols = vars(oil_added)) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed") +
+  scale_y_log10()
+
+
+ggsave("S5_CLRvtotalPAH_leaves.png", width = 10, height = 6)
+
+```
+
+No clear relationship between Chrysenes and the 2-3 ring PAHs.  Maybe Naphtalenes go up and Phenanthrenes go down.  Probably should have sampled more.  This also is realtively consistent with the amount that should be in each leaf according to Kristina's thesis in John's lab.  Unfrotunately, Decell, Kassenga, and Sebastian all published later than these samples were first examined.

@@ -1,0 +1,142 @@
+---
+title: "S5_biomass"
+author: "Stephen Formel"
+date: "3/21/2021"
+output: html_document
+---
+
+
+## load libraries + set color
+```{r}
+library(readxl)
+library(plyr)
+library(tidyverse)
+library(ggplot2)
+library(Rmisc)
+library(brms)
+
+#set color scheme
+CB1 <-  c("#D55E00", "#56B4E9", "#F0E442","#0072B2" )
+cPAL <- c("#F0E442", "#0072B2") #yellow and blue
+cPAL <- c("#D55E00", "#0072B2")
+```
+
+## import data
+```{r}
+biomass <- read_excel("../../data/S5_final_data_4Mar2020.xlsx", 
+                 sheet = "biomass", na = "NA")
+
+sample_key <- read_excel("../../data/S5_final_data_4Mar2020.xlsx", 
+                                     sheet = "sample_key", na = "NA")
+
+df <- right_join(x = sample_key, y = biomass, by = 'sampleID_stem')
+
+#subset to plant samples only and J18 sampling period only
+df <- subset(df, plant_trt=="Y" & sampling_period=="J18")
+
+#fix factors
+df <- df %>%
+  mutate_if(is.character, as.factor)
+
+df$plantID <- as.factor(df$plantID)
+
+#Gussy up the factor levels
+df$oil_added <- revalue(df$oil_added, c("Y" = "Oil Added", "N" = "No Oil Added"))
+df$orig_soil <- revalue(df$orig_soil, c("Y" = "Prev-Oiled Inoculum", "N" = "Not Prev-Oiled Inoculum"))
+
+
+```
+
+## ANOVA on AG and BG biomass
+
+```{r}
+
+m <- lm(sqrt(total_ag) ~ oil_added*orig_soil, data = df)
+
+summary(m)
+hist(resid(m))
+shapiro.test(resid(m))
+
+
+m <- lm(sqrt(total_bg) ~ oil_added*orig_soil, data = df)
+
+summary(m)
+hist(resid(m))
+shapiro.test(resid(m))
+
+```
+
+No difference in AG or BG biomass by oil_added*orig_soil, but must sqrt transform for normality.
+
+## Plot
+
+```{r}
+
+df %>% 
+  gather(key = "Compartment", value = "Biomass", c(total_ag, total_bg)) %>%
+  group_by(Compartment, oil_added, orig_soil) %>% 
+  summarise_at("Biomass",
+               funs(mean,
+                     sd, 
+                     se=sd(.)/sqrt(n()))) %>% 
+  ggplot(aes(x = orig_soil,
+           y = mean,
+           fill = oil_added))  +
+  geom_point(size = 4,
+             alpha = 0.5,
+             shape = 21,
+             position = position_dodge(width = 0.3)) +
+  geom_errorbar(aes(min = mean - 2*se,
+                    max = mean + 2*se),
+                width = 0.2,
+                position = position_dodge(width = 0.3)) +
+  labs(y = "Mean Biomass (g)",
+       x = NULL,
+       fill = "Oil Addition", 
+       caption = "Error bars represent \U00B1 2 SE") +
+  scale_fill_manual(values = c("white", "black")) +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_wrap(~ Compartment,
+             labeller = labeller(Compartment = c("total_ag" = "Above Ground", "total_bg" = "Below Ground")))
+
+ggsave("S5_biomass.png", width = 8, height = 6)
+```
+
+## Plot for public defense
+
+```{r}
+
+df %>% 
+  group_by(oil_added, orig_soil) %>% 
+  summarise_at("total_live_mass",
+               funs(mean,
+                     sd, 
+                     se=sd(.)/sqrt(n()))) %>% 
+  ggplot(aes(x = orig_soil,
+             y = mean,
+             shape = oil_added,
+             fill = orig_soil)) +
+  geom_errorbar(aes(min = mean - 2*se,
+                    max = mean + 2*se),
+                width = 0.2,
+                position = position_dodge(width = 0.3)) +
+  geom_point(size = 4,
+             position = position_dodge(width = 0.3)) +
+  labs(y = "Mean Biomass (g)",
+       x = NULL,
+       fill = "Soil Inoculum", 
+       shape = "Oil Addition",
+       caption = "Error bars represent \U00B1 2 SE") +
+  scale_fill_manual(values = cPAL) +
+  scale_shape_manual(values = c(21,24)) +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  expand_limits(x = 0,y = 0)
+
+ggsave("S5_biomass_public defense.png", width = 7, height = 5)
+```
+
+

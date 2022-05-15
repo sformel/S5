@@ -1,0 +1,166 @@
+---
+title: "S5_ITS_alpha_div"
+author: "Stephen Formel"
+date: "3/28/2021"
+output: html_document
+---
+
+---
+title: "S5_16S_alpha_div"
+author: "Stephen Formel"
+date: "3/28/2021"
+output: html_document
+---
+
+## Description and notes
+
+Run PERMANOVA and make PCA of 16S based on Aitchison
+
+## Load Libraries
+```{r, echo = FALSE, message = FALSE}
+library(readxl)
+library(plyr)
+library(tidyverse)
+library(phyloseq)
+library(data.table)
+library(reshape2)
+library(car)
+library(cowplot)
+library(vegan)
+```
+
+## Set up aesthetic for plotting
+
+```{r}
+
+#color palette
+cPAL <- c("#E69F00", "#0072B2")
+
+S5_aes <- aes(x = PC1,
+               y = PC2,
+               shape = orig_soil,
+               fill = oil_added)
+
+my.scale_aes <- list(geom_point(size = 2),
+                     #geom_polygon(alpha = 0.5),
+                     scale_shape_manual(values = c(21,24)),
+                     scale_fill_manual(values = cPAL),
+                     theme_bw(),
+                     guides(fill = guide_legend(override.aes=list(shape=21, size = 4)),
+                            shape = guide_legend(override.aes=list(size = 4))),
+                     #labs(shape = "Soil",
+                      #    fill = "Oil"),
+                     theme(plot.title = element_text(hjust = 0.5)))
+
+
+```
+
+## Import 16S phyloseq object and clean
+
+```{r}
+
+## Import ITS phyloseq object and clean
+
+source("../ITS/import_and_clean_S5_ITS.R")
+
+S5.exp <- prune_samples(sample_data(S5)$special_char=="Experimental Sample", S5)
+S5.all <- S5
+
+S5 <- S5.exp
+
+```
+
+Plot Shannon diversity for each tissue type by time point.
+
+```{r}
+
+p <- plot_richness(S5, measures = "Shannon")
+
+df <- p$data
+
+df %>%
+  group_by(tissue, sampling_period, plant_trt, oil_added, orig_soil) %>% 
+  summarise_at("value",
+               funs(mean,
+                     sd, 
+                     se=sd(.)/sqrt(n()))) %>% 
+  ggplot(aes(x = sampling_period,
+           y = mean,
+           fill = tissue,
+           shape = oil_added))  +
+  geom_point(size = 4,
+             alpha = 0.5,
+             position = position_dodge(width = 0.4)) +
+  geom_errorbar(aes(min = mean - 2*se,
+                    max = mean + 2*se),
+                width = 0.2,
+                position = position_dodge(width = 0.4)) +
+  labs(title = "S5 ITS Shannon's Diversity",
+       y = "Mean Shannon's Diversity",
+       x = NULL,
+       fill = "Oil Addition", 
+       caption = "Error bars represent \U00B1 2 SE") +
+  scale_shape_manual(values = c(21,24,23)) +
+  theme_bw()  +
+  theme(legend.position = "right") +
+  guides(fill=guide_legend(override.aes=list(shape=21))) +
+  facet_grid(cols = vars(orig_soil),
+             rows = vars(plant_trt),
+             labeller = labeller(plant_trt = c("Y" = "Planted", "N" = "No Plant")))
+  
+ggsave("S5_ITS_alpha_div.png", width = 8, height = 5.5)
+
+```
+## Model
+```{r}
+
+## Can't use plantID or sampling period as random effect because of too few levels
+# Validating gamma models: https://stats.stackexchange.com/questions/45401/how-to-validate-diagnose-a-gamma-glm-in-r
+
+m <- glm(value ~ tissue, data = df %>% 
+          filter(value!=0),
+         family = "Gamma")
+summary(m)
+car::Anova(m, type = "III", test.statistic = "F")
+hist(resid(m))
+shapiro.test(resid(m))
+par(mfrow = c(2, 2))
+plot(m)
+
+m <- glm(value ~ sampling_period*oil_added*orig_soil*plant_trt, data = df %>% #not quite normal
+          filter(tissue=="Soil", value!=0),
+         family = "Gamma")
+summary(m)
+car::Anova(m, type = "III", test.statistic = "F")
+hist(resid(m))
+shapiro.test(resid(m))
+par(mfrow = c(2, 2))
+plot(m)
+
+
+m <- glm(value ~ sampling_period*oil_added*orig_soil, data = df %>% 
+          filter(tissue=="Root", value!=0),
+         family = "Gamma")
+summary(m)
+car::Anova(m, type = "III", test.statistic = "F")
+
+hist(resid(m))
+shapiro.test(resid(m))
+par(mfrow = c(2, 2))
+plot(m)
+
+m <- glm(value ~ sampling_period*oil_added*orig_soil, data = df %>% 
+          filter(tissue=="Leaf", value!=0),
+         family = "Gamma")
+
+summary(m)
+car::Anova(m, type = "III", test.statistic = "F")
+
+hist(resid(m))
+shapiro.test(resid(m))
+par(mfrow = c(2, 2))
+plot(m)
+
+```
+
+
