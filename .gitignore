@@ -47,3 +47,6 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+#R folder (some relic of the project setup, don't want to delete yet
+R/
