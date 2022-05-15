@@ -50,3 +50,7 @@ rsconnect/
 
 #R folder (some relic of the project setup, don't want to delete yet
 R/
+
+#other files
+.gitignore
+.DS_store
