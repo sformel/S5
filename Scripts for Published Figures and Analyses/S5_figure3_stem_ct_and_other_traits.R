@@ -1,5 +1,5 @@
 #Plant biomass and stem count over time
-#Last updated: April 3, 2022
+#Last updated: August 30, 2022
 #By Steve Formel
 
 #load libraries----
@@ -42,7 +42,7 @@ S5_theme <- theme_bw(base_size = 7) +
 #color palette
 cPAL <- c("#F0E442", "#0072B2")
 
-#Read in data and clean
+#Read in data and clean----
 
 data.FP <-
   "../Relevant Data/data_available_from_GRIIDC/GOMRI_R5x2860000002_data.xlsx"
@@ -75,12 +75,10 @@ df$orig_soil <-
 
 ## Model Num of live stems
 
-m <-
-  brm(
-    num_stems_live ~ 1 + (1 |
-                            plantID) + sampling_period * orig_soil * oil_added,
+m <-brm(num_stems_live ~ 1 + (1 |plantID) + sampling_period * orig_soil * oil_added,
     data = df,
     family = "negbinomial",
+    iter = 5000,
     control = list(adapt_delta = 0.99,
                    max_treedepth = 10),
     cores = 4
@@ -193,9 +191,7 @@ ggsave(
 )
 
 #convert pdf to TIFF for publisher
-library(pdftools)
-
-pdf_convert(
+pdftools::pdf_convert(
   pdf = "figures/S5_figure3.pdf",
   format = "tiff",
   filenames = "figures/S5_figure3.tif",
@@ -251,9 +247,9 @@ anova(m, test = "F")
 
 #Number of nodes
 
-ggplot(df,
+p <- ggplot(df,
        aes(
-         x = unclass(sampling_period),
+         x = sampling_period,
          y = num_nodes,
          fill = orig_soil,
          shape = oil_added
@@ -261,12 +257,13 @@ ggplot(df,
   geom_point(size = 2,
              alpha = 0.5,
              position = position_dodge(width = 0.4)) +
-  theme_bw() +
+  S5_theme +
   labs(y = "Mean Nodes per Stem",
        x = "Time",
        fill = "Inoculum",
        shape = "Oil Addition") +
-  theme(legend.position = "right") +
+  theme(legend.position = "right", 
+        panel.grid.major = element_line(size = 0.5)) +
   guides(
     fill = guide_legend(override.aes = list(shape = 21)),
     color = guide_legend(override.aes = list(shape = 21)),
@@ -276,8 +273,60 @@ ggplot(df,
   scale_shape_manual(values = c(21, 24)) +
   scale_color_manual(values = cPAL)
 
+#This was extremely helpful for tweaking the plot
+nflplotR::ggpreview(plot = p,
+                    width = 85,
+                    height = 85,
+                    units = "mm",
+                    dpi = 300,
+                    scale = 1,
+                    device = "pdf")
+
+ggsave(
+  filename = "S5_supp_figure5.pdf",
+  path = "figures/",
+  width = 85,
+  height = 85,
+  units = "mm",
+  dpi = 300,
+  scale = 1
+)
+
+#For draft and co-author review
+ggsave(
+  filename = "S5_supp_figure5.png",
+  path = "figures/",
+  width = 85,
+  height = 85,
+  units = "mm",
+  dpi = 300,
+  scale = 1
+)
+
 #It's clear I did a bad job communicating how to count nodes.  Can't use this data.  Also clear that there isn't that big of a difference within any time point.
 
+m <-brm(
+    num_nodes ~ 1 + (1 |plantID) + sampling_period * orig_soil * oil_added,
+    data = df,
+    family = "negbinomial", 
+    iter = 5000,
+    control = list(adapt_delta = 0.99,
+                   max_treedepth = 10),
+    cores = 4
+  )
+
+summary(m)
+
+#These are commented out so they don't hinder plot generation when run as a script
+# pp_check(object = m, type = "dens_overlay", ndraws = 100)
+# pp_check(m, type = "stat", stat = 'median', ndraws = 100)
+# pp_check(m, type = "stat", stat = 'mean', nsamples = 100)
+# pp_check(m ,type = 'intervals', nsamples = 100)
+# 
+# conditional_effects(m)
+
+#Create report on model
+report::report(m)
 
 #Stem Height
 ggplot(df,
@@ -306,12 +355,10 @@ ggplot(df,
   scale_color_manual(values = cPAL)
 
 ## Model
-m <-
-  brm(
-    stem_ht ~ 1 + (1 |
-                     plantID) + unclass(sampling_period) + orig_soil * oil_added,
+m <- brm(stem_ht ~ 1 + (1 |plantID) + sampling_period*orig_soil * oil_added,
     data = df,
-    family = "skew_normal",
+    family = "skew_normal", 
+    iter = 5000,
     control = list(adapt_delta = 0.99,
                    max_treedepth = 10),
     cores = 4
@@ -319,22 +366,34 @@ m <-
 
 summary(m)
 
-pp_check(object = m,
-         type = "dens_overlay",
-         nsamples = 100)
-pp_check(m,
-         type = "stat",
-         stat = 'median',
-         nsamples = 100)
-pp_check(m,
-         type = "stat",
-         stat = 'mean',
-         nsamples = 100)
-pp_check(m , type = 'intervals', nsamples = 100)
-
-conditional_effects(m)
+# pp_check(object = m,
+#          type = "dens_overlay",
+#          nsamples = 100)
+# pp_check(m,
+#          type = "stat",
+#          stat = 'median',
+#          nsamples = 100)
+# pp_check(m,
+#          type = "stat",
+#          stat = 'mean',
+#          nsamples = 100)
+# pp_check(m , type = 'intervals', nsamples = 100)
+# 
+# conditional_effects(m)
 
 #Periods 1 + 3 (November) are taller than 2 + 4, so that makes sense.  It doesn't look like there is anything worth pursuing here.  Stems may have gotten shorter over time, but it doesn't look like it's unique to any treatment.
+
+m <- glm(
+  stem_ht ~ orig_soil * oil_added,
+  data = df %>%
+    filter(sampling_period == "J18"),
+  family = quasipoisson(link = "log")
+)
+
+summary(m)
+
+#F-test is most appropriate for quasipoisson according to the help for anova.glm
+anova(m, test = "F")
 
 #Stem Diameter
 ggplot(df,
@@ -363,12 +422,10 @@ ggplot(df,
   scale_color_manual(values = cPAL)
 
 ## Model
-m <-
-  brm(
-    stem_diam ~ 1 + (1 |
-                       plantID) + unclass(sampling_period) + orig_soil * oil_added,
+m <-brm(stem_diam ~ 1 + (1 |plantID) + sampling_period*orig_soil * oil_added,
     data = df,
     family = "skew_normal",
+    iter = 5000,
     control = list(adapt_delta = 0.99,
                    max_treedepth = 10),
     cores = 4

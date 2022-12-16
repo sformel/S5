@@ -76,14 +76,36 @@ summary(m)
 hist(resid(m))
 shapiro.test(resid(m))
 
+car::Anova(m, type ="III")
 
 m <- lm(sqrt(total_bg) ~ oil_added * orig_soil, data = df)
 
 summary(m)
 hist(resid(m))
 shapiro.test(resid(m))
+car::Anova(m, type ="III")
 
 #No difference in AG or BG biomass by oil_added*orig_soil, but must sqrt transform for normality.
+
+
+#AG:BG ratio
+df$AGBG_ratio <- df$total_ag/df$total_bg
+m <- lm(sqrt(AGBG_ratio) ~ oil_added * orig_soil, data = df)
+
+summary(m)
+hist(resid(m))
+shapiro.test(resid(m))
+car::Anova(m, type ="III")
+
+#Total Biomass
+df$total_biomass <- df$total_ag + df$total_bg
+m <- lm(sqrt(total_biomass) ~ oil_added * orig_soil, data = df)
+
+summary(m)
+hist(resid(m))
+shapiro.test(resid(m))
+car::Anova(m, type ="III")
+
 
 ## Plot
 p <- df %>%
@@ -102,12 +124,24 @@ p <- df %>%
     aes(min = mean - 2 * se,
         max = mean + 2 * se),
     width = point_size / 6,
-    size = stroke_size,
+    size = stroke_size*1.5,
     position = position_dodge(width = point_size / 4)
   ) +
   geom_point(
     stroke = stroke_size,
     size = point_size,
+    position = position_dodge(width = point_size / 4)
+  ) +
+  geom_point(data = df, 
+             inherit.aes = FALSE, 
+             aes(
+    x = orig_soil,
+    y = total_live_mass,
+    shape = oil_added,
+    ),
+  alpha = 0.5,
+  stroke = stroke_size,
+    size = point_size*1.5,
     position = position_dodge(width = point_size / 4)
   ) +
   labs(
@@ -160,6 +194,14 @@ p <- df %>%
     )
   )
 
+p
+
+#pull means to top layer
+p$layers <- p$layers[c(3,1,2)]
+
+p <- p +
+  expand_limits(x = 0,
+                y = 0)
 #This was extremely helpful for tweaking the plot
 # nflplotR::ggpreview(plot = p,
 #                     width = 85,
@@ -191,9 +233,7 @@ ggsave(
 )
 
 #convert pdf to TIFF for publisher
-library(pdftools)
-
-pdf_convert(
+pdftools::pdf_convert(
   pdf = "figures/S5_figure2.pdf",
   format = "tiff",
   filenames = "figures/S5_figure2.tif",

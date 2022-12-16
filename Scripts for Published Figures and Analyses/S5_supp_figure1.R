@@ -189,9 +189,7 @@ ggsave(
 )
 
 #convert pdf to TIFF for publisher
-library(pdftools)
-
-pdf_convert(
+pdftools::pdf_convert(
   pdf = "figures/S5_supp_fig1.pdf",
   format = "tiff",
   filenames = "figures/S5_supp_fig1.tif",
