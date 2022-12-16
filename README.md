@@ -13,7 +13,9 @@ Scripts related to the S5 project in the Van Bael lab.
 
 ## Map of Scripts to Figures
 
-- ![Figure 1: Relative abundance of PAHs](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure1.png) [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figure1_and_oil_analyses.R)
+- Figure 1: Relative abundance of PAHs
+  - ![Figure 1: Relative abundance of PAHs](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure1.png)       
+  - [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figure1_and_oil_analyses.R)
   
 - ![Figure 2: Plant Biomass](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure2.png) [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figure2_plant_biomass.R)
   
