@@ -5,7 +5,7 @@ Scripts related to the S5 project in the Van Bael lab.
 
 - Titled, "Decay of oil residues in the soil is enhanced by the presence of Spartina alterniflora, with no additional effects from microbiome manipulation"
 
-- DOI: 10.3389/fsoil.2022.949439 
+- DOI: [10.3389/fsoil.2022.949439](https://www.frontiersin.org/articles/10.3389/fsoil.2022.949439/full)
 
 - Raw Data is available via GRIIDC under the data set UDI:  [R5x2860000002](https://data.gulfresearchinitiative.org/data/R5.x286.000:0002)
 
