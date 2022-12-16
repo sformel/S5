@@ -1,8 +1,9 @@
 #Summarize how many samples remain for 16S after removing chloroplast/mitchondrial DNA
+#Last updated 2022-12-16
 
 library(readxl)
 library(plyr)
-library(tidyverse)
+library(dplyr)
 library(phyloseq)
 library(data.table)
 library(reshape2)
@@ -51,4 +52,4 @@ Summary <- S5SampleData %>%
   group_by(sampling_period, tissue) %>% 
   dplyr::summarise(n = n())
 
-write_csv(Summary, "Summary_16S_sample_count_after_filtering.csv")
+#write_csv(Summary, "Summary_16S_sample_count_after_filtering.csv")

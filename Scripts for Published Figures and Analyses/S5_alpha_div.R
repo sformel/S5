@@ -1,6 +1,5 @@
 #S5 Project Alpha Diversity
-#Last updated: August 30, 2022
-#By Steve Formel
+#Last updated: 2022-12-16
 
 ## Description
 #Assess alpha diversity of 16S and ITS communities
@@ -9,7 +8,7 @@
 
 library(readxl)
 library(plyr)
-library(tidyverse)
+library(dplyr)
 library(phyloseq)
 library(data.table)
 library(reshape2)
@@ -183,24 +182,24 @@ prok.alpha
 #                     scale = 1,
 #                     device = "pdf")
 
-ggsave(plot = prok.alpha,
-       filename = "S5_supp_fig3.pdf",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#For draft and co-author review
-ggsave(plot = prok.alpha,
-       filename = "S5_supp_fig3.png",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
+# ggsave(plot = prok.alpha,
+#        filename = "S5_supp_fig4.pdf",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #For draft and co-author review
+# ggsave(plot = prok.alpha,
+#        filename = "S5_supp_fig4.png",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
 
 ## Model
 
@@ -218,7 +217,7 @@ shapiro.test(resid(m))
 
 #No changes when rarefied to 10441 seqs
 
-## Import ITS phyloseq object and clean
+## Import ITS phyloseq object and clean ----
 
 source("../Scripts for Published Figures and Analyses/import_and_clean_S5_ITS.R")
 
@@ -335,24 +334,24 @@ ITS.alpha
 #                     scale = 1,
 #                     device = "pdf")
 
-ggsave(plot = ITS.alpha,
-       filename = "S5_supp_fig4.pdf",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#For draft and co-author review
-ggsave(plot = ITS.alpha,
-       filename = "S5_supp_fig4.png",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
+# ggsave(plot = ITS.alpha,
+#        filename = "S5_supp_fig6.pdf",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #For draft and co-author review
+# ggsave(plot = ITS.alpha,
+#        filename = "S5_supp_fig6.png",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
 
 ## Model
 ## Can't use plantID or sampling period as random effect because of too few levels

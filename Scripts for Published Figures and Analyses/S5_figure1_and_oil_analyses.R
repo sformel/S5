@@ -1,12 +1,11 @@
 #PAH Decomposition over time
-#Last updated: May 14, 2022
-#By Steve Formel
+#Last updated: 2022-12-16l
 
 #load libraries----
 
 library(cowplot)
 library(readxl)
-library(tidyverse)
+library(dplyr)
 library(compositions)
 library(vegan)
 library(plotrix)
@@ -61,12 +60,10 @@ sample_key <-
   )
 
 oil <- right_join(x = sample_key,
-                  y = oil, by = 'sampleID_stem')
+                  y = oil)
 
 #Clean Data
 oil <- oil %>%
-  rename(c("plantID" = "plantID.x")) %>%
-  select(-plantID.y) %>%
   dplyr::mutate(across(where(is.character), factor)) %>%
   dplyr::mutate(across(c(plantID, table, block), factor)) %>%
   mutate(sampling_period = factor(sampling_period,
@@ -225,34 +222,34 @@ p
 #                     scale = 1,
 #                     device = "pdf")
 
-ggsave(
-  filename = "S5_figure1.pdf",
-  path = "figures/",
-  width = 85,
-  height = 85,
-  units = "mm",
-  dpi = 300,
-  scale = 1
-)
-
-#For draft and co-author review
-ggsave(
-  filename = "S5_figure1.png",
-  path = "figures/",
-  width = 85,
-  height = 85,
-  units = "mm",
-  dpi = 300,
-  scale = 1
-)
-
-#convert pdf to TIFF for publisher
-pdftools::pdf_convert(
-  pdf = "figures/S5_figure1.pdf",
-  format = "tiff",
-  filenames = "figures/S5_figure1.tif",
-  dpi = 300
-)
+# ggsave(
+#   filename = "S5_figure1.pdf",
+#   path = "figures/",
+#   width = 85,
+#   height = 85,
+#   units = "mm",
+#   dpi = 300,
+#   scale = 1
+# )
+# 
+# #For draft and co-author review
+# ggsave(
+#   filename = "S5_figure1.png",
+#   path = "figures/",
+#   width = 85,
+#   height = 85,
+#   units = "mm",
+#   dpi = 300,
+#   scale = 1
+# )
+# 
+# #convert pdf to TIFF for publisher
+# pdftools::pdf_convert(
+#   pdf = "figures/S5_figure1.pdf",
+#   format = "tiff",
+#   filenames = "figures/S5_figure1.tif",
+#   dpi = 300
+# )
 
 
 
@@ -327,5 +324,5 @@ car::Anova(m, type = "III")
 #mean and se
 oil.anova %>%
   group_by(plant_trt, sampling_period) %>%
-  summarise(across(tot_PAH, list(mean = mean,
+  dplyr::summarise(across(tot_PAH, list(mean = mean,
                                  se = std.error)))

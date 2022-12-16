@@ -1,8 +1,7 @@
 #Script for S5
 #Purpose: Import ITS phyloseq object and replace/clean sample data
 
-#Last updated by Steve Formel
-#May 15, 2022
+#Last updated 2022-12-16
 
 #load libraries----
 library(readxl)
@@ -130,4 +129,3 @@ sample_data(S5) <- samdf
 
 #get rid of everything but the S5 phyloseq object
 rm(list=setdiff(ls(), "S5"))
-

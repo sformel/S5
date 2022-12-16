@@ -1,6 +1,5 @@
 #Map of Soil Inocula Sampling Area
-#Last updated: May 14, 2022
-#By Steve Formel
+#Last updated: 2022-12-16
 
 #load libraries----
 
@@ -167,31 +166,31 @@ p
 #                     scale = 1,
 #                     device = "pdf")
 
-ggsave(
-  filename = "S5_supp_fig1.pdf",
-  path = "figures/",
-  width = 85,
-  height = 85,
-  units = "mm",
-  dpi = 300,
-  scale = 1
-)
-
-#For draft and co-author review
-ggsave(
-  filename = "S5_supp_fig1.png",
-  path = "figures/",
-  width = 85,
-  height = 85,
-  units = "mm",
-  dpi = 300,
-  scale = 1
-)
-
-#convert pdf to TIFF for publisher
-pdftools::pdf_convert(
-  pdf = "figures/S5_supp_fig1.pdf",
-  format = "tiff",
-  filenames = "figures/S5_supp_fig1.tif",
-  dpi = 300
-)
+# ggsave(
+#   filename = "S5_supp_fig1.pdf",
+#   path = "figures/",
+#   width = 85,
+#   height = 85,
+#   units = "mm",
+#   dpi = 300,
+#   scale = 1
+# )
+# 
+# #For draft and co-author review
+# ggsave(
+#   filename = "S5_supp_fig1.png",
+#   path = "figures/",
+#   width = 85,
+#   height = 85,
+#   units = "mm",
+#   dpi = 300,
+#   scale = 1
+# )
+# 
+# #convert pdf to TIFF for publisher
+# pdftools::pdf_convert(
+#   pdf = "figures/S5_supp_fig1.pdf",
+#   format = "tiff",
+#   filenames = "figures/S5_supp_fig1.tif",
+#   dpi = 300
+# )

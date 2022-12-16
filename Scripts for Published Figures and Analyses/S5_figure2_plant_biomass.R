@@ -1,12 +1,11 @@
 #Plant biomass and stem count over time
-#Last updated: May 14, 2022
-#By Steve Formel
+#Last updated: 2022-12-16
 
 #load libraries----
 
 library(cowplot)
 library(readxl)
-library(tidyverse)
+library(dplyr)
 library(compositions)
 library(vegan)
 library(plotrix)
@@ -211,31 +210,31 @@ p <- p +
 #                     scale = 1,
 #                     device = "pdf")
 
-ggsave(
-  filename = "S5_figure2.pdf",
-  path = "figures/",
-  width = 85,
-  height = 85,
-  units = "mm",
-  dpi = 300,
-  scale = 1
-)
-
-#For draft and co-author review
-ggsave(
-  filename = "S5_figure2.png",
-  path = "figures/",
-  width = 85,
-  height = 85,
-  units = "mm",
-  dpi = 300,
-  scale = 1
-)
-
-#convert pdf to TIFF for publisher
-pdftools::pdf_convert(
-  pdf = "figures/S5_figure2.pdf",
-  format = "tiff",
-  filenames = "figures/S5_figure2.tif",
-  dpi = 300
-)
+# ggsave(
+#   filename = "S5_figure2.pdf",
+#   path = "figures/",
+#   width = 85,
+#   height = 85,
+#   units = "mm",
+#   dpi = 300,
+#   scale = 1
+# )
+# 
+# #For draft and co-author review
+# ggsave(
+#   filename = "S5_figure2.png",
+#   path = "figures/",
+#   width = 85,
+#   height = 85,
+#   units = "mm",
+#   dpi = 300,
+#   scale = 1
+# )
+# 
+# #convert pdf to TIFF for publisher
+# pdftools::pdf_convert(
+#   pdf = "figures/S5_figure2.pdf",
+#   format = "tiff",
+#   filenames = "figures/S5_figure2.tif",
+#   dpi = 300
+# )

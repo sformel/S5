@@ -1,6 +1,5 @@
 #Plant biomass and stem count over time
-#Last updated: August 30, 2022
-#By Steve Formel
+#Last updated: 2022-12-16
 
 ## Description
 #Run PERMANOVA and make PCA of 16S based on Aitchison
@@ -9,7 +8,7 @@
 
 library(cowplot)
 library(readxl)
-library(tidyverse)
+library(dplyr)
 library(compositions)
 library(vegan)
 library(plotrix)
@@ -436,32 +435,32 @@ p.16S.soil.point
 #                     scale = 1,
 #                     device = "pdf")
 
-ggsave(plot = p.16S.soil.point,
-       filename = "S5_figure4.pdf",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#For draft and co-author review
-ggsave(plot = p.16S.soil.point,
-       filename = "S5_figure4.png",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#convert pdf to TIFF for publisher
-pdftools::pdf_convert(
-  pdf = "figures/S5_figure4.pdf",
-  format = "tiff",
-  filenames = "figures/S5_figure4.tif",
-  dpi = 300
-)
+# ggsave(plot = p.16S.soil.point,
+#        filename = "S5_figure4.pdf",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #For draft and co-author review
+# ggsave(plot = p.16S.soil.point,
+#        filename = "S5_figure4.png",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #convert pdf to TIFF for publisher
+# pdftools::pdf_convert(
+#   pdf = "figures/S5_figure4.pdf",
+#   format = "tiff",
+#   filenames = "figures/S5_figure4.tif",
+#   dpi = 300
+# )
 
 #ITS analysis----
 
@@ -898,32 +897,32 @@ p.ITS.soil.point
 #                     scale = 1,
 #                     device = "pdf")
 
-ggsave(plot = p.ITS.soil.point,
-       filename = "S5_figure5.pdf",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#For draft and co-author review
-ggsave(plot = p.ITS.soil.point,
-       filename = "S5_figure5.png",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#convert pdf to TIFF for publisher
-pdftools::pdf_convert(
-  pdf = "figures/S5_figure5.pdf",
-  format = "tiff",
-  filenames = "figures/S5_figure5.tif",
-  dpi = 300
-)
+# ggsave(plot = p.ITS.soil.point,
+#        filename = "S5_figure5.pdf",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #For draft and co-author review
+# ggsave(plot = p.ITS.soil.point,
+#        filename = "S5_figure5.png",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #convert pdf to TIFF for publisher
+# pdftools::pdf_convert(
+#   pdf = "figures/S5_figure5.pdf",
+#   format = "tiff",
+#   filenames = "figures/S5_figure5.tif",
+#   dpi = 300
+# )
 
 ## Permanova - Aitchison
 
@@ -1249,32 +1248,32 @@ p.ITS.root.point
 #                     scale = 1,
 #                     device = "pdf")
 
-ggsave(plot = p.ITS.root.point,
-       filename = "S5_figure6.pdf",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#For draft and co-author review
-ggsave(plot = p.ITS.root.point,
-       filename = "S5_figure6.png",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#convert pdf to TIFF for publisher
-pdftools::pdf_convert(
-  pdf = "figures/S5_figure6.pdf",
-  format = "tiff",
-  filenames = "figures/S5_figure6.tif",
-  dpi = 300
-)
+# ggsave(plot = p.ITS.root.point,
+#        filename = "S5_figure6.pdf",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #For draft and co-author review
+# ggsave(plot = p.ITS.root.point,
+#        filename = "S5_figure6.png",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #convert pdf to TIFF for publisher
+# pdftools::pdf_convert(
+#   pdf = "figures/S5_figure6.pdf",
+#   format = "tiff",
+#   filenames = "figures/S5_figure6.tif",
+#   dpi = 300
+# )
 
 ## Permanova - Aitchison
 
@@ -1327,8 +1326,6 @@ ordistep(mod2, scope = formula(mod1))
 anova(mod1,
       by = "margin",
       permutations = 9999)
-
-#Block is the only significant factor.
 
 ## Leaves - Did the inoculation work?
 
@@ -1596,32 +1593,32 @@ p.ITS.leaf.point
 #                     scale = 1,
 #                     device = "pdf")
 
-ggsave(plot = p.ITS.leaf.point,
-       filename = "S5_figure7.pdf",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#For draft and co-author review
-ggsave(plot = p.ITS.leaf.point,
-       filename = "S5_figure7.png",
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#convert pdf to TIFF for publisher
-pdftools::pdf_convert(
-  pdf = "figures/S5_figure7.pdf",
-  format = "tiff",
-  filenames = "figures/S5_figure7.tif",
-  dpi = 300
-)
+# ggsave(plot = p.ITS.leaf.point,
+#        filename = "S5_figure7.pdf",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #For draft and co-author review
+# ggsave(plot = p.ITS.leaf.point,
+#        filename = "S5_figure7.png",
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #convert pdf to TIFF for publisher
+# pdftools::pdf_convert(
+#   pdf = "figures/S5_figure7.pdf",
+#   format = "tiff",
+#   filenames = "figures/S5_figure7.tif",
+#   dpi = 300
+# )
 ## Permanova - Aitchison
 
 #Just Leaves
@@ -1672,8 +1669,6 @@ ordistep(mod2, scope = formula(mod1))
 anova(mod1,
       by = "margin",
       permutations = 9999)
-
-#The only significant thing here is table and block.
 
 #Save plots -----
 

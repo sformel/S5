@@ -1,6 +1,5 @@
 #Plant biomass and stem count over time
-#Last updated: August 30, 2022
-#By Steve Formel
+#Last updated: 2022-12-16
 
 #load libraries----
 
@@ -169,34 +168,34 @@ p <- ggplot(df,
 
 p
 
-ggsave(
-  filename = "S5_figure3.pdf",
-  path = "figures/",
-  width = 85,
-  height = 85,
-  units = "mm",
-  dpi = 300,
-  scale = 1
-)
-
-#For draft and co-author review
-ggsave(
-  filename = "S5_figure3.png",
-  path = "figures/",
-  width = 85,
-  height = 85,
-  units = "mm",
-  dpi = 300,
-  scale = 1
-)
-
-#convert pdf to TIFF for publisher
-pdftools::pdf_convert(
-  pdf = "figures/S5_figure3.pdf",
-  format = "tiff",
-  filenames = "figures/S5_figure3.tif",
-  dpi = 300
-)
+# ggsave(
+#   filename = "S5_figure3.pdf",
+#   path = "figures/",
+#   width = 85,
+#   height = 85,
+#   units = "mm",
+#   dpi = 300,
+#   scale = 1
+# )
+# 
+# #For draft and co-author review
+# ggsave(
+#   filename = "S5_figure3.png",
+#   path = "figures/",
+#   width = 85,
+#   height = 85,
+#   units = "mm",
+#   dpi = 300,
+#   scale = 1
+# )
+# 
+# #convert pdf to TIFF for publisher
+# pdftools::pdf_convert(
+#   pdf = "figures/S5_figure3.pdf",
+#   format = "tiff",
+#   filenames = "figures/S5_figure3.tif",
+#   dpi = 300
+# )
 
 
 ## Poisson on final stem count (J18)
@@ -274,34 +273,34 @@ p <- ggplot(df,
   scale_color_manual(values = cPAL)
 
 #This was extremely helpful for tweaking the plot
-nflplotR::ggpreview(plot = p,
-                    width = 85,
-                    height = 85,
-                    units = "mm",
-                    dpi = 300,
-                    scale = 1,
-                    device = "pdf")
-
-ggsave(
-  filename = "S5_supp_figure5.pdf",
-  path = "figures/",
-  width = 85,
-  height = 85,
-  units = "mm",
-  dpi = 300,
-  scale = 1
-)
-
-#For draft and co-author review
-ggsave(
-  filename = "S5_supp_figure5.png",
-  path = "figures/",
-  width = 85,
-  height = 85,
-  units = "mm",
-  dpi = 300,
-  scale = 1
-)
+# nflplotR::ggpreview(plot = p,
+#                     width = 85,
+#                     height = 85,
+#                     units = "mm",
+#                     dpi = 300,
+#                     scale = 1,
+#                     device = "pdf")
+# 
+# ggsave(
+#   filename = "S5_supp_figure5.pdf",
+#   path = "figures/",
+#   width = 85,
+#   height = 85,
+#   units = "mm",
+#   dpi = 300,
+#   scale = 1
+# )
+# 
+# #For draft and co-author review
+# ggsave(
+#   filename = "S5_supp_figure5.png",
+#   path = "figures/",
+#   width = 85,
+#   height = 85,
+#   units = "mm",
+#   dpi = 300,
+#   scale = 1
+# )
 
 #It's clear I did a bad job communicating how to count nodes.  Can't use this data.  Also clear that there isn't that big of a difference within any time point.
 
@@ -325,8 +324,8 @@ summary(m)
 # 
 # conditional_effects(m)
 
-#Create report on model
-report::report(m)
+#Create report on model - this helped me phrase the reporting of the stats.
+#report::report(m)
 
 #Stem Height
 ggplot(df,
@@ -381,8 +380,6 @@ summary(m)
 # 
 # conditional_effects(m)
 
-#Periods 1 + 3 (November) are taller than 2 + 4, so that makes sense.  It doesn't look like there is anything worth pursuing here.  Stems may have gotten shorter over time, but it doesn't look like it's unique to any treatment.
-
 m <- glm(
   stem_ht ~ orig_soil * oil_added,
   data = df %>%
@@ -433,18 +430,18 @@ m <-brm(stem_diam ~ 1 + (1 |plantID) + sampling_period*orig_soil * oil_added,
 
 summary(m)
 
-pp_check(object = m,
-         type = "dens_overlay",
-         nsamples = 100)
-pp_check(m,
-         type = "stat",
-         stat = 'median',
-         nsamples = 100)
-pp_check(m,
-         type = "stat",
-         stat = 'mean',
-         nsamples = 100)
-pp_check(m , type = 'intervals', nsamples = 100)
+# pp_check(object = m,
+#          type = "dens_overlay",
+#          nsamples = 100)
+# pp_check(m,
+#          type = "stat",
+#          stat = 'median',
+#          nsamples = 100)
+# pp_check(m,
+#          type = "stat",
+#          stat = 'mean',
+#          nsamples = 100)
+# pp_check(m , type = 'intervals', nsamples = 100)
 
 conditional_effects(m)
 

@@ -1,15 +1,13 @@
-#Plant biomass and stem count over time
-#Last updated: August 30, 2022
-#By Steve Formel
+#Graphic representation of community composition by phyla
+#Last updated: 2022-12-16
 
 ## Description
-#Run PERMANOVA and make PCA of 16S based on Aitchison
 
 #load libraries----
 
 library(cowplot)
 library(readxl)
-library(tidyverse)
+library(dplyr)
 library(compositions)
 library(vegan)
 library(plotrix)
@@ -186,14 +184,14 @@ q
 #                     scale = 1,
 #                     device = "pdf")
 
-ggsave(plot = q,
-       "S5_fungal_soil_composition_supp.png", 
-       path = "figures/",
-       width = 170,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
+# ggsave(plot = q,
+#        "S5_fungal_soil_composition_supp.png", 
+#        path = "figures/",
+#        width = 170,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
 
 ### Fungal Root composition
 
@@ -264,22 +262,22 @@ q <- p$data %>%
 q
 
 #This was extremely helpful for tweaking the plot
-nflplotR::ggpreview(plot = q,
-                    width = 170,
-                    height = 85,
-                    units = "mm",
-                    dpi = 300,
-                    scale = 1,
-                    device = "pdf")
-
-ggsave(plot = q,
-       "S5_fungal_root_composition_supp.png", 
-       path = "figures/",
-       width = 170,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
+# nflplotR::ggpreview(plot = q,
+#                     width = 170,
+#                     height = 85,
+#                     units = "mm",
+#                     dpi = 300,
+#                     scale = 1,
+#                     device = "pdf")
+# 
+# ggsave(plot = q,
+#        "S5_fungal_root_composition_supp.png", 
+#        path = "figures/",
+#        width = 170,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
 
 
 ### Fungal Leave composition
@@ -350,22 +348,22 @@ q <- p$data %>%
 q
 
 #This was extremely helpful for tweaking the plot
-nflplotR::ggpreview(plot = q,
-                    width = 170,
-                    height = 85,
-                    units = "mm",
-                    dpi = 300,
-                    scale = 1,
-                    device = "pdf")
-
-ggsave(plot = q,
-       "S5_fungal_leaf_composition_supp.png", 
-       path = "figures/",
-       width = 170,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
+# nflplotR::ggpreview(plot = q,
+#                     width = 170,
+#                     height = 85,
+#                     units = "mm",
+#                     dpi = 300,
+#                     scale = 1,
+#                     device = "pdf")
+# 
+# ggsave(plot = q,
+#        "S5_fungal_leaf_composition_supp.png", 
+#        path = "figures/",
+#        width = 170,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
 
 
 ### Prokaryote Soil composition
@@ -435,32 +433,32 @@ q <- p$data %>%
 
 q
 
-#This was extremely helpful for tweaking the plot
-nflplotR::ggpreview(plot = q,
-                    width = 170,
-                    height = 100,
-                    units = "mm",
-                    dpi = 300,
-                    scale = 1,
-                    device = "pdf")
-
-ggsave(plot = q,
-       "S5_prok_soil_composition_supp_no_legend.png", 
-       path = "figures/",
-       width = 170,
-       height = 100,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
-
-#plot legend only
-q.leg <- get_legend(q + theme(legend.position = "right"))
-
-ggsave(plot = q.leg,
-       "S5_prok_soil_composition_supp_legend.png", 
-       path = "figures/",
-       width = 85,
-       height = 85,
-       units = "mm",
-       dpi = 300,
-       scale = 1)
+# #This was extremely helpful for tweaking the plot
+# nflplotR::ggpreview(plot = q,
+#                     width = 170,
+#                     height = 100,
+#                     units = "mm",
+#                     dpi = 300,
+#                     scale = 1,
+#                     device = "pdf")
+# 
+# ggsave(plot = q,
+#        "S5_prok_soil_composition_supp_no_legend.png", 
+#        path = "figures/",
+#        width = 170,
+#        height = 100,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
+# 
+# #plot legend only
+# q.leg <- get_legend(q + theme(legend.position = "right"))
+# 
+# ggsave(plot = q.leg,
+#        "S5_prok_soil_composition_supp_legend.png", 
+#        path = "figures/",
+#        width = 85,
+#        height = 85,
+#        units = "mm",
+#        dpi = 300,
+#        scale = 1)
