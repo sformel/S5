@@ -48,11 +48,11 @@ Scripts related to the S5 project in the Van Bael lab.
 - Supplementary Figure 4: Shannon Diversity of Prokaryote Soil Communities [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_alpha_div.R)
   - ![Supplementary Figure 4: Shannon Diversity of Prokaryote Soil Communities Map](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_supp_fig4.png)
   
-- Supplementary Figure 5: Composition of Phyla in Prokaryote Soil Communities [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/Graphic Composition - supplemental.R)
+- Supplementary Figure 5: Composition of Phyla in Prokaryote Soil Communities [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/Graphic_Composition_supplemental.R)
   - ![Supplementary Figure 5: Composition of Phyla in Prokaryote Soil Communities Map](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_prok_soil_composition_supp_no_legend.png)
   
 - Supplementary Figure 6: Shannon Diversity of Fungal Communities [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_alpha_div.R)
   - ![Supplementary Figure 6: Shannon Diversity of Fungal Communities Map](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_supp_fig6.png)
   
-- Supplementary Figure 7: Composition of Phyla in Soil Soil Communities [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/Graphic Composition - supplemental.R)
+- Supplementary Figure 7: Composition of Phyla in Soil Soil Communities [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/Graphic_Composition_supplemental.R)
   - ![Supplementary Figure 5: Composition of Phyla in Soil Soil Communities Map](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_fungal_soil_composition_supp.png)
