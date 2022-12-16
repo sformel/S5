@@ -13,18 +13,23 @@ Scripts related to the S5 project in the Van Bael lab.
 
 ## Map of Scripts to Figures
 
-- Figure 1: Relative abundance of PAHs
-  - ![Figure 1: Relative abundance of PAHs](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure1.png)       
-  - [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figure1_and_oil_analyses.R)
+- Figure 1: Relative abundance of PAHs [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figure1_and_oil_analyses.R)
+  - ![Figure 1: Relative abundance of PAHs](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure1.png)
   
-- ![Figure 2: Plant Biomass](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure2.png) [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figure2_plant_biomass.R)
+- Figure 2: Plant Biomass [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figure2_plant_biomass.R)
+  - ![Figure 2: Plant Biomass](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure2.png) 
   
-- ![Figure 3: Live Stem Count](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure3.png) [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figure3_stem_ct_and_other_traits.R)
+- Figure 3: Live Stem Count [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figure3_stem_ct_and_other_traits.R)
+  - ![Figure 3: Live Stem Count](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure3.png) 
   
-- ![Figure 4: Prokaryote Composition in Soil](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure4.png) [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figures_4_5_and_beta_div_analyses.R)
+- Figure 4: Prokaryote Composition in Soil [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figures_4_5_and_beta_div_analyses.R)
+  - ![Figure 4: Prokaryote Composition in Soil](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure4.png) 
   
-- ![Figure 5: Fungal Composition in Soil](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure5.png) [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figures_4_5_and_beta_div_analyses.R)
+- Figure 5: Fungal Composition in Soil [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figures_4_5_and_beta_div_analyses.R)
+  - ![Figure 5: Fungal Composition in Soil](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure5.png) 
   
-- ![Figure 6: Fungal Composition in Roots](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure6.png) [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figures_4_5_and_beta_div_analyses.R)
+- Figure 6: Fungal Composition in Roots [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figures_4_5_and_beta_div_analyses.R)
+  - ![Figure 6: Fungal Composition in Roots](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/thumbnail_versions/S5_figure6.png) 
   
-- ![Figure 7: Fungal Composition in Leavess](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/S5_figure7.png) [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figures_4_5_and_beta_div_analyses.R)
+- Figure 7: Fungal Composition in Leaves [Script](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/S5_figures_4_5_and_beta_div_analyses.R)
+  - ![Figure 7: Fungal Composition in Leaves](https://github.com/sformel/S5/blob/master/Scripts%20for%20Published%20Figures%20and%20Analyses/figures/S5_figure7.png) 
